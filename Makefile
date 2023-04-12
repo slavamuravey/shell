@@ -1,20 +1,18 @@
-.PHONY: all
-all: clean main
-	@./main
+CC = gcc
+CFLAGS = -g -Wall -ansi -pedantic
+SRCMODULES = dynamic_char_array.c word_item.c tokenizer.c shell.c
+OBJMODULES = $(SRCMODULES:.c=.o)
 
-main: clean_main
-	@echo "+ $@"	
-	@gcc -Wall -g main.c -o main
+%.o: %.c %.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
-main.o: main.c
-	@echo "+ $@"
-	@gcc -Wall -g -c main.c
+.PHONY: run
+run: clean shell
+	./shell
+
+shell: main.c $(OBJMODULES)
+	$(CC) $(CFLAGS) $^ -o $@
 
 .PHONY: clean
-clean: clean_main
-	@echo "+ $@"
-
-.PHONY: clean_main
-clean_main:
-	@echo "+ $@"
-	@rm -f main main.o
+clean:
+	rm -f *.o shell
