@@ -1,5 +1,8 @@
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
+#include <sys/wait.h>
+#include <errno.h>
 #include "shell.h"
 
 struct shell *shell_create(struct tokenizer *t)
@@ -17,12 +20,73 @@ void shell_print_input_prompt(struct shell *s)
     }
 }
 
+static char **shell_create_cmd(struct shell *s)
+{
+    size_t list_len = 0;
+    struct word_item *tmp;
+    char **array;
+    int i = 0;
+
+    for (tmp = s->t->first; tmp; tmp = tmp->next) {
+        list_len++;
+    }
+
+    if (list_len == 0) {
+        return NULL;
+    }
+
+    array = malloc((list_len + 1) * sizeof(char*));
+
+    for (tmp = s->t->first; tmp; tmp = tmp->next, i++) {
+        array[i] = tmp->word;
+    }
+
+    array[i] = NULL;
+
+    return array;
+}
+
 void shell_exec(struct shell *s)
 {
-    struct word_item *tmp;
-    for (tmp = s->t->first; tmp; tmp = tmp->next) {
-        printf("[%s]\n", tmp->word);
+    pid_t pid;
+    if (s->t->first == NULL) {
+        return;
     }
+
+    if (!strcmp(s->t->first->word, "cd")) {
+        char *dir;
+        if (s->t->first->next != NULL) {
+            dir = s->t->first->next->word;
+        } else {
+            char *home_dir = getenv("HOME");
+            if (home_dir == NULL) {
+                printf("I don't know where is your home.\n");
+                return;
+            }
+            dir = home_dir;
+        }
+
+        if (chdir(dir) == -1) {
+            perror(dir);
+        }
+
+        return;
+    }
+
+    pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        exit(1);
+    }
+
+    if (pid == 0) {
+        char **cmd = shell_create_cmd(s);
+        execvp(*cmd, cmd);
+        perror(*cmd);
+        exit(1);
+    }
+
+    wait(NULL);
 }
 
 void shell_run(struct shell *s)

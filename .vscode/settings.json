@@ -1,5 +1,11 @@
 {
     "files.associations": {
-        "dynamic_char_array.h": "c"
+        "dynamic_char_array.h": "c",
+        "word_item.h": "c",
+        "string.h": "c",
+        "type_traits": "c",
+        "wait.h": "c",
+        "unistd.h": "c",
+        "errno.h": "c"
     }
 }
