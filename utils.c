@@ -5,9 +5,9 @@
 
 char *create_string_from_array(const char *src, size_t len)
 {
-    char *word = malloc(len + 1);
-    memcpy(word, src, len);
-    word[len] = '\0';
+    char *str = malloc(len + 1);
+    memcpy(str, src, len);
+    str[len] = '\0';
 
-    return word;
+    return str;
 }
