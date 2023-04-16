@@ -4,6 +4,8 @@
 #include "tokenizer.h"
 #include "utils.h"
 
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+
 #define TOKEN_AMP "&"
 #define TOKEN_AMP_2 "&&"
 #define TOKEN_PIPE "|"
@@ -30,8 +32,6 @@ static const char *const SEPARATOR_TOKENS[] = {
     TOKEN_CLOSING_PARENTHESIS,
     TOKEN_SEMICOLON
 };
-
-#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 struct tokenizer *tokenizer_create()
 {
