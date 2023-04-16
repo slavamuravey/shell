@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -g -Wall -ansi -pedantic
-SRCMODULES = dynamic_char_array.c word_item.c tokenizer.c shell.c
+SRCMODULES = utils.c dynamic_char_array.c word_item.c tokenizer.c shell.c
 OBJMODULES = $(SRCMODULES:.c=.o)
 
 %.o: %.c %.h

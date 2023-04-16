@@ -6,6 +6,7 @@
         "type_traits": "c",
         "wait.h": "c",
         "unistd.h": "c",
-        "errno.h": "c"
+        "errno.h": "c",
+        "tokenizer.h": "c"
     }
 }

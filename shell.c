@@ -13,7 +13,7 @@ struct shell *shell_create(struct tokenizer *t)
     return s;
 }
 
-void shell_print_input_prompt(struct shell *s)
+static void shell_print_input_prompt(struct shell *s)
 {
     if (isatty(STDIN_FILENO)) {
         printf("> ");
@@ -46,7 +46,7 @@ static char **shell_create_cmd(struct shell *s)
     return array;
 }
 
-void shell_exec(struct shell *s)
+static void shell_exec(struct shell *s)
 {
     pid_t pid;
     if (s->t->first == NULL) {
