@@ -47,11 +47,11 @@ struct tokenizer *tokenizer_create()
     return t;
 }
 
-static void tokenizer_add_word_item(struct tokenizer *t, struct dynamic_char_array *array)
+static void tokenizer_add_word_item(struct tokenizer *t, struct dynamic_char_array *array, bool separator)
 {
     struct word_item *wi;
     char *word = create_string_from_array(array->ptr, array->len);
-    wi = word_item_create(word);
+    wi = word_item_create(word, separator);
     word_item_push(&t->first, &t->last, wi);
 }
 
@@ -87,12 +87,12 @@ static void tokenizer_handle_separator_token(struct tokenizer *t, char c)
                     t->within_word = false;
 
                     if (t->tmp_word->len) {
-                        tokenizer_add_word_item(t, t->tmp_word);
+                        tokenizer_add_word_item(t, t->tmp_word, false);
                         t->tmp_word->len = 0;
                     }
                     
                     t->tmp_separator->len--;
-                    tokenizer_add_word_item(t, t->tmp_separator);
+                    tokenizer_add_word_item(t, t->tmp_separator, true);
                     t->tmp_separator->len = 0;
                 }
 
@@ -120,7 +120,7 @@ void tokenizer_accept_char(struct tokenizer *t, char c)
         }
     } else if ((c == ' ' || c == '\t' || c == '\n') && !t->quote_mode_enabled) {
         if (t->within_word) {
-            tokenizer_add_word_item(t, t->tmp_word);
+            tokenizer_add_word_item(t, t->tmp_word, false);
             t->tmp_word->len = 0;
         }
 

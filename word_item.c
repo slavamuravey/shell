@@ -1,10 +1,11 @@
 #include <stdlib.h>
 #include "word_item.h"
 
-struct word_item *word_item_create(char *word)
+struct word_item *word_item_create(char *word, bool separator)
 {
     struct word_item *wi = malloc(sizeof(struct word_item));
     wi->word = word;
+    wi->separator = separator;
     wi->next = NULL;
 
     return wi;
