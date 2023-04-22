@@ -23,7 +23,7 @@ static void shell_print_input_prompt(struct shell *s)
 static char **shell_create_cmd(struct shell *s)
 {
     size_t list_len = 0;
-    struct word_item *tmp;
+    struct token *tmp;
     char **array;
     int i = 0;
 
@@ -38,7 +38,7 @@ static char **shell_create_cmd(struct shell *s)
     array = malloc((list_len + 1) * sizeof(char*));
 
     for (tmp = s->t->first; tmp; tmp = tmp->next, i++) {
-        array[i] = tmp->word;
+        array[i] = tmp->token;
     }
 
     array[i] = NULL;
@@ -53,10 +53,10 @@ static void shell_exec(struct shell *s)
         return;
     }
 
-    if (!strcmp(s->t->first->word, "cd")) {
+    if (!strcmp(s->t->first->token, "cd")) {
         char *dir;
         if (s->t->first->next != NULL) {
-            dir = s->t->first->next->word;
+            dir = s->t->first->next->token;
         } else {
             char *home_dir = getenv("HOME");
             if (home_dir == NULL) {

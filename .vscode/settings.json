@@ -1,7 +1,7 @@
 {
     "files.associations": {
         "dynamic_char_array.h": "c",
-        "word_item.h": "c",
+        "token.h": "c",
         "string.h": "c",
         "type_traits": "c",
         "wait.h": "c",

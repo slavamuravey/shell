@@ -47,12 +47,12 @@ struct tokenizer *tokenizer_create()
     return t;
 }
 
-static void tokenizer_add_word_item(struct tokenizer *t, struct dynamic_char_array *array, bool separator)
+static void tokenizer_add_token(struct tokenizer *t, struct dynamic_char_array *array, bool separator)
 {
-    struct word_item *wi;
+    struct token *wi;
     char *word = create_string_from_array(array->ptr, array->len);
-    wi = word_item_create(word, separator);
-    word_item_push(&t->first, &t->last, wi);
+    wi = token_create(word, separator);
+    token_push(&t->first, &t->last, wi);
 }
 
 void tokenizer_clear(struct tokenizer *t)
@@ -61,7 +61,7 @@ void tokenizer_clear(struct tokenizer *t)
     t->tmp_word->len = 0;
     t->tmp_separator->len = 0;
     t->within_word = false;
-    word_item_destroy(t->first);
+    token_destroy(t->first);
     t->first = t->last = NULL;
 }
 
@@ -87,12 +87,12 @@ static void tokenizer_handle_separator_token(struct tokenizer *t, char c)
                     t->within_word = false;
 
                     if (t->tmp_word->len) {
-                        tokenizer_add_word_item(t, t->tmp_word, false);
+                        tokenizer_add_token(t, t->tmp_word, false);
                         t->tmp_word->len = 0;
                     }
                     
                     t->tmp_separator->len--;
-                    tokenizer_add_word_item(t, t->tmp_separator, true);
+                    tokenizer_add_token(t, t->tmp_separator, true);
                     t->tmp_separator->len = 0;
                 }
 
@@ -120,7 +120,7 @@ void tokenizer_accept_char(struct tokenizer *t, char c)
         }
     } else if ((c == ' ' || c == '\t' || c == '\n') && !t->quote_mode_enabled) {
         if (t->within_word) {
-            tokenizer_add_word_item(t, t->tmp_word, false);
+            tokenizer_add_token(t, t->tmp_word, false);
             t->tmp_word->len = 0;
         }
 
@@ -131,6 +131,11 @@ void tokenizer_accept_char(struct tokenizer *t, char c)
         t->within_word = true;
         t->char_escape_mode_enabled = false;
     }
+}
+
+void tokenizer_tokenize(struct tokenizer *t, char *str)
+{
+
 }
 
 void tokenizer_destroy(struct tokenizer *t)

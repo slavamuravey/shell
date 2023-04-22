@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include "dynamic_char_array.h"
-#include "word_item.h"
+#include "token.h"
 
 struct tokenizer {
     bool quote_mode_enabled;
@@ -11,8 +11,8 @@ struct tokenizer {
     struct dynamic_char_array *tmp_word;
     struct dynamic_char_array *tmp_separator;
     bool within_word;
-    struct word_item *first;
-    struct word_item *last;
+    struct token *first;
+    struct token *last;
 };
 
 struct tokenizer *tokenizer_create();
