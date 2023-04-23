@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include "shell.h"
+#include "utils.h"
 
 struct shell *shell_create(struct tokenizer *t)
 {
@@ -20,14 +21,14 @@ static void shell_print_input_prompt(struct shell *s)
     }
 }
 
-static char **shell_create_cmd(struct shell *s)
+static char **shell_create_cmd(struct shell *s, struct token *token_first)
 {
     size_t list_len = 0;
     struct token *tmp;
     char **array;
     int i = 0;
 
-    for (tmp = s->t->first; tmp; tmp = tmp->next) {
+    for (tmp = token_first; tmp; tmp = tmp->next) {
         list_len++;
     }
 
@@ -37,7 +38,7 @@ static char **shell_create_cmd(struct shell *s)
 
     array = malloc((list_len + 1) * sizeof(char*));
 
-    for (tmp = s->t->first; tmp; tmp = tmp->next, i++) {
+    for (tmp = token_first; tmp; tmp = tmp->next, i++) {
         array[i] = tmp->token;
     }
 
@@ -46,20 +47,22 @@ static char **shell_create_cmd(struct shell *s)
     return array;
 }
 
-static void shell_exec(struct shell *s)
+static void shell_exec_parse(struct shell *s, struct token *token_first)
 {
     pid_t pid;
-    if (s->t->first == NULL) {
+    char **cmd;
+
+    if (!token_first) {
         return;
     }
 
-    if (!strcmp(s->t->first->token, "cd")) {
+    if (!strcmp(token_first->token, "cd")) {
         char *dir;
-        if (s->t->first->next != NULL) {
-            dir = s->t->first->next->token;
+        if (token_first->next) {
+            dir = token_first->next->token;
         } else {
             char *home_dir = getenv("HOME");
-            if (home_dir == NULL) {
+            if (!home_dir) {
                 printf("I don't know where is your home.\n");
                 return;
             }
@@ -73,6 +76,8 @@ static void shell_exec(struct shell *s)
         return;
     }
 
+    cmd = shell_create_cmd(s, token_first);
+
     pid = fork();
     if (pid == -1) {
         perror("fork");
@@ -80,34 +85,57 @@ static void shell_exec(struct shell *s)
     }
 
     if (pid == 0) {
-        char **cmd = shell_create_cmd(s);
         execvp(*cmd, cmd);
         perror(*cmd);
         exit(1);
     }
 
+    free(cmd);
+
     wait(NULL);
+}
+
+static void shell_exec(struct shell *s, const char *str)
+{
+    struct tokenize_data *data = NULL;
+    struct tokenize_error *error = NULL;
+    struct token *token_first;
+    tokenizer_tokenize(s->t, str, &data, &error);
+    if (error) {
+        char *message = error->message;
+        token_destroy(data->token_first);
+        free(data);
+        free(error);
+        printf("Error: %s\n", message);
+
+        return;
+    }
+    
+    token_first = data->token_first;
+    free(data);
+    free(error);
+    shell_exec_parse(s, token_first);
+    token_destroy(token_first);
 }
 
 void shell_run(struct shell *s)
 {
     int c;
+    size_t buffer = 4;
+    char *str = malloc(buffer);
+    *str = '\0';
+
     shell_print_input_prompt(s);
-
     while ((c = getchar()) != EOF) {
-        tokenizer_accept_char(s->t, c);
-
+        append_char_to_string(str, &buffer, c);
         if (c == '\n') {
-            if (s->t->quote_mode_enabled == true) {
-                printf("Error: unmatched quotes\n");
-            } else {
-                shell_exec(s);
-            }
-
-            tokenizer_clear(s->t);
+            shell_exec(s, str);
+            *str = '\0';
             shell_print_input_prompt(s);
         }
     }
+
+    free(str);
 
     if (isatty(STDIN_FILENO)) {
         putchar('\n');

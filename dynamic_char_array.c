@@ -25,6 +25,9 @@ void dynamic_char_array_append(struct dynamic_char_array *dca, char c)
 
 void dynamic_char_array_destroy(struct dynamic_char_array *dca)
 {
-    free(dca->ptr);
+    if (dca) {
+        free(dca->ptr);
+    }
+
     free(dca);
 }

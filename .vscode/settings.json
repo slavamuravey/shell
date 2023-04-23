@@ -7,6 +7,16 @@
         "wait.h": "c",
         "unistd.h": "c",
         "errno.h": "c",
-        "tokenizer.h": "c"
+        "tokenizer.h": "c",
+        "array": "c",
+        "*.tcc": "c",
+        "string": "c",
+        "vector": "c",
+        "string_view": "c",
+        "functional": "c",
+        "limits": "c",
+        "ostream": "c",
+        "streambuf": "c",
+        "tuple": "c"
     }
 }

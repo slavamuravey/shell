@@ -15,9 +15,16 @@ struct tokenizer {
     struct token *last;
 };
 
+struct tokenize_data {
+    struct token *token_first;
+};
+
+struct tokenize_error {
+    char *message;
+};
+
 struct tokenizer *tokenizer_create();
-void tokenizer_clear(struct tokenizer *t);
-void tokenizer_accept_char(struct tokenizer *t, char c);
+void tokenizer_tokenize(struct tokenizer *t, const char *str, struct tokenize_data **data, struct tokenize_error **error);
 void tokenizer_destroy(struct tokenizer *t);
 
 #endif
