@@ -121,21 +121,21 @@ static void shell_exec(struct shell *s, const char *str)
 void shell_run(struct shell *s)
 {
     int c;
-    size_t buffer = 4;
-    char *str = malloc(buffer);
-    *str = '\0';
+    struct dynamic_char_array *dca = dynamic_char_array_create(4);
 
     shell_print_input_prompt(s);
     while ((c = getchar()) != EOF) {
-        append_char_to_string(str, &buffer, c);
+        dynamic_char_array_append(dca, c);
         if (c == '\n') {
+            char *str = create_string_from_array(dca->ptr, dca->len);
             shell_exec(s, str);
-            *str = '\0';
+            dca->len = 0;
+            free(str);
             shell_print_input_prompt(s);
         }
     }
 
-    free(str);
+    dynamic_char_array_destroy(dca);
 
     if (isatty(STDIN_FILENO)) {
         putchar('\n');
