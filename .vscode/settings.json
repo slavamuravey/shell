@@ -20,6 +20,8 @@
         "tuple": "c",
         "utils.h": "c",
         "stdbool.h": "c",
-        "shell.h": "c"
+        "shell.h": "c",
+        "stdlib.h": "c",
+        "parser.h": "c"
     }
 }

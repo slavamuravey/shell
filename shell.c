@@ -6,10 +6,11 @@
 #include "shell.h"
 #include "utils.h"
 
-struct shell *shell_create(struct tokenizer *t)
+struct shell *shell_create(struct tokenizer *t, struct parser *p)
 {
     struct shell *s = malloc(sizeof(struct shell));
     s->t = t;
+    s->p = p;
 
     return s;
 }
@@ -97,24 +98,48 @@ static void shell_exec_parse(struct shell *s, struct token *token_first)
 
 static void shell_exec(struct shell *s, const char *str)
 {
-    struct tokenize_data *data = NULL;
-    struct tokenize_error *error = NULL;
+    struct tokenize_data *t_data = NULL;
+    struct tokenize_error *t_error = NULL;
+    struct parse_data *p_data = NULL;
+    struct parse_error *p_error = NULL;
     struct token *token_first;
-    tokenizer_tokenize(s->t, str, &data, &error);
-    if (error) {
-        char *message = error->message;
-        token_destroy(data->token_first);
-        free(data);
-        free(error);
-        printf("Error: %s\n", message);
+    struct ast *ast;
+
+    tokenizer_tokenize(s->t, str, &t_data, &t_error);
+    if (t_error) {
+        char *message = t_error->message;
+        token_destroy(t_data->token_first);
+        free(t_data);
+        free(t_error);
+        printf("Tokenize error: %s\n", message);
 
         return;
     }
     
-    token_first = data->token_first;
-    free(data);
-    free(error);
+    token_first = t_data->token_first;
+    free(t_data);
+    free(t_error);
+
+    parser_parse(s->p, token_first, &p_data, &p_error);
+    if (p_error) {
+        char *message = p_error->message;
+        free(p_data);
+        free(p_error);
+        printf("Parse error: %s\n", message);
+
+        return;
+    }
+
+    ast = p_data->ast;
+
+    /*
+    * TODO: Replace to VM execution
+    */
     shell_exec_parse(s, token_first);
+
+    free(p_data);
+    free(p_error);
+
     token_destroy(token_first);
 }
 
