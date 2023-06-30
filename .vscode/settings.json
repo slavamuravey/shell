@@ -22,6 +22,7 @@
         "stdbool.h": "c",
         "shell.h": "c",
         "stdlib.h": "c",
-        "parser.h": "c"
+        "parser.h": "c",
+        "ast.h": "c"
     }
 }

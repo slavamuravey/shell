@@ -28,7 +28,8 @@ struct parser *parser_create()
 void parser_parse(struct parser *p, struct token *token_first, struct parse_data **data, struct parse_error **error)
 {
     struct ast *ast;
-    ast = ast_create();
+    char *argv[] = {NULL};
+    ast = ast_create_command(argv, NULL, false);
     *data = parse_data_create(ast);
 }
 

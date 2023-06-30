@@ -10,9 +10,14 @@ OBJMODULES = $(SRCMODULES:.c=.o)
 run: clean shell
 	./shell
 
+-include ast.mk
+
 shell: main.c $(OBJMODULES)
 	$(CC) $(CFLAGS) $^ -o $@
 
+.PHONY: test
+test: ast_test_run
+
 .PHONY: clean
 clean:
-	rm -f *.o shell
+	rm -f *.o shell *_test
