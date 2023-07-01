@@ -58,7 +58,7 @@ struct tokenizer *tokenizer_create()
     t->tmp_word = dynamic_array_create(8, sizeof(char));
     t->tmp_separator = dynamic_array_create(8, sizeof(char));
     t->within_word = false;
-    t->tokens = tokens_array_create();
+    t->tokens = tokens_create();
 
     return t;
 }
@@ -77,7 +77,7 @@ static void tokenizer_reset(struct tokenizer *t)
     t->tmp_word->len = 0;
     t->tmp_separator->len = 0;
     t->within_word = false;
-    t->tokens = tokens_array_create();
+    t->tokens = tokens_create();
 }
 
 static void tokenizer_handle_separator_token(struct tokenizer *t, char c)
@@ -169,7 +169,7 @@ void tokenizer_destroy(struct tokenizer *t)
         free(t->tmp_separator->ptr);
         free(t->tmp_separator);
         
-        tokens_array_destroy(t->tokens);
+        tokens_destroy(t->tokens);
     }
     
     free(t);

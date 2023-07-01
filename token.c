@@ -1,14 +1,14 @@
 #include <stdlib.h>
 #include "token.h"
 
-struct dynamic_array *tokens_array_create()
+struct dynamic_array *tokens_create()
 {
     struct dynamic_array *tokens = dynamic_array_create(4, sizeof(struct token));
 
     return tokens;
 }
 
-void tokens_array_destroy(struct dynamic_array *tokens)
+void tokens_destroy(struct dynamic_array *tokens)
 {
     int i;
     for (i = 0; i < tokens->len; i++) {

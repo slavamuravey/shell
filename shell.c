@@ -112,7 +112,7 @@ static void shell_exec(struct shell *s, const char *str)
     tokenizer_tokenize(s->t, str, &t_data, &t_error);
     if (t_error) {
         char *message = t_error->message;
-        tokens_array_destroy(t_data->tokens);
+        tokens_destroy(t_data->tokens);
         free(t_data);
         free(t_error);
         printf("Tokenize error: %s\n", message);
@@ -144,7 +144,7 @@ static void shell_exec(struct shell *s, const char *str)
     */
     shell_exec_parse(s, tokens);
 
-    tokens_array_destroy(tokens);
+    tokens_destroy(tokens);
     ast_destroy(ast);
 }
 

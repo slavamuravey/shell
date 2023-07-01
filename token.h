@@ -9,7 +9,7 @@ struct token {
     bool separator;
 };
 
-struct dynamic_array *tokens_array_create();
-void tokens_array_destroy(struct dynamic_array *tokens);
+struct dynamic_array *tokens_create();
+void tokens_destroy(struct dynamic_array *tokens);
 
 #endif
