@@ -25,7 +25,7 @@ struct parser *parser_create()
     return p;
 }
 
-void parser_parse(struct parser *p, struct token *token_first, struct parse_data **data, struct parse_error **error)
+void parser_parse(struct parser *p, struct dynamic_array *tokens, struct parse_data **data, struct parse_error **error)
 {
     struct ast *ast;
     char *argv[] = {NULL};

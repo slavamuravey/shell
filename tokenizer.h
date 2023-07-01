@@ -2,21 +2,19 @@
 #define TOKENIZER_SENTRY
 
 #include <stdbool.h>
-#include "dynamic_char_array.h"
-#include "token.h"
+#include "dynamic_array.h"
 
 struct tokenizer {
     bool quote_mode_enabled;
     bool char_escape_mode_enabled;
-    struct dynamic_char_array *tmp_word;
-    struct dynamic_char_array *tmp_separator;
+    struct dynamic_array *tmp_word;
+    struct dynamic_array *tmp_separator;
     bool within_word;
-    struct token *first;
-    struct token *last;
+    struct dynamic_array *tokens;
 };
 
 struct tokenize_data {
-    struct token *token_first;
+    struct dynamic_array *tokens;
 };
 
 struct tokenize_error {

@@ -5,6 +5,7 @@
 #include <errno.h>
 #include "shell.h"
 #include "utils.h"
+#include "token.h"
 
 struct shell *shell_create(struct tokenizer *t, struct parser *p)
 {
@@ -22,25 +23,22 @@ static void shell_print_input_prompt(struct shell *s)
     }
 }
 
-static char **shell_create_cmd(struct shell *s, struct token *token_first)
+static char **shell_create_cmd(struct shell *s, struct dynamic_array *tokens)
 {
-    size_t list_len = 0;
-    struct token *tmp;
     char **array;
-    int i = 0;
+    int i;
+    struct token *data;
 
-    for (tmp = token_first; tmp; tmp = tmp->next) {
-        list_len++;
-    }
-
-    if (list_len == 0) {
+    if (tokens->len == 0) {
         return NULL;
     }
 
-    array = malloc((list_len + 1) * sizeof(char*));
-
-    for (tmp = token_first; tmp; tmp = tmp->next, i++) {
-        array[i] = tmp->token;
+    array = malloc((tokens->len + 1) * sizeof(char*));
+    data = tokens->ptr;
+    
+    for (i = 0; i < tokens->len; i++) {
+        struct token token = data[i];
+        array[i] = token.token;
     }
 
     array[i] = NULL;
@@ -48,19 +46,25 @@ static char **shell_create_cmd(struct shell *s, struct token *token_first)
     return array;
 }
 
-static void shell_exec_parse(struct shell *s, struct token *token_first)
+static void shell_exec_parse(struct shell *s, struct dynamic_array *tokens)
 {
     pid_t pid;
     char **cmd;
+    struct token *data;
+    struct token token1;
 
-    if (!token_first) {
+    if (tokens->len == 0) {
         return;
     }
 
-    if (!strcmp(token_first->token, "cd")) {
+    data = tokens->ptr;
+    token1 = data[0];
+
+    if (!strcmp(token1.token, "cd")) {
         char *dir;
-        if (token_first->next) {
-            dir = token_first->next->token;
+        if (tokens->len > 1) {
+            struct token token2 = data[1];
+            dir = token2.token;
         } else {
             char *home_dir = getenv("HOME");
             if (!home_dir) {
@@ -77,7 +81,7 @@ static void shell_exec_parse(struct shell *s, struct token *token_first)
         return;
     }
 
-    cmd = shell_create_cmd(s, token_first);
+    cmd = shell_create_cmd(s, tokens);
 
     pid = fork();
     if (pid == -1) {
@@ -102,13 +106,13 @@ static void shell_exec(struct shell *s, const char *str)
     struct tokenize_error *t_error = NULL;
     struct parse_data *p_data = NULL;
     struct parse_error *p_error = NULL;
-    struct token *token_first;
+    struct dynamic_array *tokens;
     struct ast *ast;
 
     tokenizer_tokenize(s->t, str, &t_data, &t_error);
     if (t_error) {
         char *message = t_error->message;
-        token_destroy(t_data->token_first);
+        tokens_array_destroy(t_data->tokens);
         free(t_data);
         free(t_error);
         printf("Tokenize error: %s\n", message);
@@ -116,13 +120,14 @@ static void shell_exec(struct shell *s, const char *str)
         return;
     }
     
-    token_first = t_data->token_first;
+    tokens = t_data->tokens;
     free(t_data);
     free(t_error);
 
-    parser_parse(s->p, token_first, &p_data, &p_error);
+    parser_parse(s->p, tokens, &p_data, &p_error);
     if (p_error) {
         char *message = p_error->message;
+        ast_destroy(p_data->ast);
         free(p_data);
         free(p_error);
         printf("Parse error: %s\n", message);
@@ -131,36 +136,37 @@ static void shell_exec(struct shell *s, const char *str)
     }
 
     ast = p_data->ast;
+    free(p_data);
+    free(p_error);
 
     /*
     * TODO: Replace to VM execution
     */
-    shell_exec_parse(s, token_first);
+    shell_exec_parse(s, tokens);
 
-    free(p_data);
-    free(p_error);
-
-    token_destroy(token_first);
+    tokens_array_destroy(tokens);
+    ast_destroy(ast);
 }
 
 void shell_run(struct shell *s)
 {
     int c;
-    struct dynamic_char_array *dca = dynamic_char_array_create(4);
+    struct dynamic_array *da = dynamic_array_create(4, sizeof(char));
 
     shell_print_input_prompt(s);
     while ((c = getchar()) != EOF) {
-        dynamic_char_array_append(dca, c);
+        dynamic_array_append(da, &c);
         if (c == '\n') {
-            char *str = create_string_from_array(dca->ptr, dca->len);
+            char *str = create_string_from_array(da->ptr, da->len);
             shell_exec(s, str);
-            dca->len = 0;
+            da->len = 0;
             free(str);
             shell_print_input_prompt(s);
         }
     }
 
-    dynamic_char_array_destroy(dca);
+    free(da->ptr);
+    free(da);
 
     if (isatty(STDIN_FILENO)) {
         putchar('\n');

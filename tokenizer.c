@@ -3,6 +3,7 @@
 #include <string.h>
 #include "tokenizer.h"
 #include "utils.h"
+#include "token.h"
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -33,10 +34,10 @@ static const char *const SEPARATOR_TOKENS[] = {
     TOKEN_SEMICOLON
 };
 
-static struct tokenize_data *tokenize_data_create(struct token *token_first)
+static struct tokenize_data *tokenize_data_create(struct dynamic_array *tokens)
 {
     struct tokenize_data *data = malloc(sizeof(struct tokenize_data));
-    data->token_first = token_first;
+    data->tokens = tokens;
 
     return data;
 }
@@ -54,21 +55,20 @@ struct tokenizer *tokenizer_create()
     struct tokenizer *t = malloc(sizeof(struct tokenizer));
     t->quote_mode_enabled = false;
     t->char_escape_mode_enabled = false;
-    t->tmp_word = dynamic_char_array_create(8);
-    t->tmp_separator = dynamic_char_array_create(8);
+    t->tmp_word = dynamic_array_create(8, sizeof(char));
+    t->tmp_separator = dynamic_array_create(8, sizeof(char));
     t->within_word = false;
-    t->first = NULL;
-    t->last = NULL;
+    t->tokens = tokens_array_create();
 
     return t;
 }
 
-static void tokenizer_add_token(struct tokenizer *t, struct dynamic_char_array *array, bool separator)
+static void tokenizer_add_token(struct tokenizer *t, struct dynamic_array *array, bool separator)
 {
-    struct token *token;
-    char *token_str = create_string_from_array(array->ptr, array->len);
-    token = token_create(token_str, separator);
-    token_push(&t->first, &t->last, token);
+    struct token token;
+    token.token = create_string_from_array(array->ptr, array->len);
+    token.separator = separator;
+    dynamic_array_append(t->tokens, &token);
 }
 
 static void tokenizer_reset(struct tokenizer *t)
@@ -77,7 +77,7 @@ static void tokenizer_reset(struct tokenizer *t)
     t->tmp_word->len = 0;
     t->tmp_separator->len = 0;
     t->within_word = false;
-    t->first = t->last = NULL;
+    t->tokens = tokens_array_create();
 }
 
 static void tokenizer_handle_separator_token(struct tokenizer *t, char c)
@@ -90,7 +90,7 @@ static void tokenizer_handle_separator_token(struct tokenizer *t, char c)
     }
 
     do {
-        dynamic_char_array_append(t->tmp_separator, c);
+        dynamic_array_append(t->tmp_separator, &c);
         
         for (i = 0; i < tokens_count; i++) {
             const char *token = SEPARATOR_TOKENS[i];
@@ -144,7 +144,7 @@ void tokenizer_tokenize(struct tokenizer *t, const char *str, struct tokenize_da
 
             t->within_word = false;
         } else if ((c != '\\' && c != '"') || t->char_escape_mode_enabled) {
-            dynamic_char_array_append(t->tmp_word, c);
+            dynamic_array_append(t->tmp_word, &c);
             
             t->within_word = true;
             t->char_escape_mode_enabled = false;
@@ -155,7 +155,7 @@ void tokenizer_tokenize(struct tokenizer *t, const char *str, struct tokenize_da
         *error = tokenize_error_create("unmatched quotes");
     }
 
-    *data = tokenize_data_create(t->first);
+    *data = tokenize_data_create(t->tokens);
 
     tokenizer_reset(t);
 }
@@ -163,9 +163,13 @@ void tokenizer_tokenize(struct tokenizer *t, const char *str, struct tokenize_da
 void tokenizer_destroy(struct tokenizer *t)
 {
     if (t) {
-        dynamic_char_array_destroy(t->tmp_word);
-        dynamic_char_array_destroy(t->tmp_separator);
-        token_destroy(t->first);
+        free(t->tmp_word->ptr);
+        free(t->tmp_word);
+        
+        free(t->tmp_separator->ptr);
+        free(t->tmp_separator);
+        
+        tokens_array_destroy(t->tokens);
     }
     
     free(t);

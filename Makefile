@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -g -Wall -ansi -pedantic
-SRCMODULES = utils.c dynamic_char_array.c token.c tokenizer.c ast.c parser.c shell.c
+SRCMODULES = utils.c dynamic_array.c token.c tokenizer.c ast.c parser.c shell.c
 OBJMODULES = $(SRCMODULES:.c=.o)
 
 %.o: %.c %.h
@@ -11,12 +11,13 @@ run: clean shell
 	./shell
 
 -include ast.mk
+-include dynamic_array.mk
 
 shell: main.c $(OBJMODULES)
 	$(CC) $(CFLAGS) $^ -o $@
 
 .PHONY: test
-test: ast_test_run
+test: ast_test_run dynamic_array_test_run
 
 .PHONY: clean
 clean:

@@ -1,33 +1,22 @@
 #include <stdlib.h>
 #include "token.h"
 
-struct token *token_create(char *token, bool separator)
+struct dynamic_array *tokens_array_create()
 {
-    struct token *t = malloc(sizeof(struct token));
-    t->token = token;
-    t->separator = separator;
-    t->next = NULL;
+    struct dynamic_array *tokens = dynamic_array_create(4, sizeof(struct token));
 
-    return t;
+    return tokens;
 }
 
-void token_push(struct token **first, struct token **last, struct token *token)
+void tokens_array_destroy(struct dynamic_array *tokens)
 {
-    if (*last) {
-        (*last)->next = token;
-        *last = (*last)->next;
-    } else {
-        *first = *last = token;
+    int i;
+    for (i = 0; i < tokens->len; i++) {
+        struct token *data = tokens->ptr;
+        struct token token = data[i];
+        free(token.token);
     }
-}
 
-void token_destroy(struct token *first)
-{
-    struct token *tmp;
-    while (first) {
-        tmp = first;
-        first = first->next;
-        free(tmp->token);
-        free(tmp);
-    }
+    free(tokens->ptr);
+    free(tokens);
 }

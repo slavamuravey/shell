@@ -1,6 +1,6 @@
 {
     "files.associations": {
-        "dynamic_char_array.h": "c",
+        "dynamic_array.h": "c",
         "token.h": "c",
         "string.h": "c",
         "type_traits": "c",
