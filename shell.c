@@ -20,6 +20,7 @@ static void shell_print_input_prompt(struct shell *s)
 {
     if (isatty(STDIN_FILENO)) {
         printf("> ");
+        fflush(stdout);
     }
 }
 
