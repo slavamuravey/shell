@@ -14,7 +14,7 @@ void tokens_destroy(struct dynamic_array *tokens)
     for (i = 0; i < tokens->len; i++) {
         struct token *data = tokens->ptr;
         struct token token = data[i];
-        free(token.token);
+        free(token.text);
     }
 
     free(tokens->ptr);

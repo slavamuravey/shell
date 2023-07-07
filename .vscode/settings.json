@@ -24,6 +24,9 @@
         "stdlib.h": "c",
         "parser.h": "c",
         "ast.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "compare": "c",
+        "utility": "c",
+        "system_error": "c"
     }
 }

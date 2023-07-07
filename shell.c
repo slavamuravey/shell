@@ -39,7 +39,7 @@ static char **shell_create_cmd(struct shell *s, struct dynamic_array *tokens)
     
     for (i = 0; i < tokens->len; i++) {
         struct token token = data[i];
-        array[i] = token.token;
+        array[i] = token.text;
     }
 
     array[i] = NULL;
@@ -61,11 +61,11 @@ static void shell_exec_parse(struct shell *s, struct dynamic_array *tokens)
     data = tokens->ptr;
     token1 = data[0];
 
-    if (!strcmp(token1.token, "cd")) {
+    if (!strcmp(token1.text, "cd")) {
         char *dir;
         if (tokens->len > 1) {
             struct token token2 = data[1];
-            dir = token2.token;
+            dir = token2.text;
         } else {
             char *home_dir = getenv("HOME");
             if (!home_dir) {

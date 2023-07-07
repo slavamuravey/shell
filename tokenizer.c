@@ -7,31 +7,31 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
-#define TOKEN_AMP "&"
-#define TOKEN_AMP_2 "&&"
-#define TOKEN_PIPE "|"
-#define TOKEN_PIPE_2 "||"
-#define TOKEN_OPENING_TRIANGLE_BRACKET "<"
-#define TOKEN_CLOSING_TRIANGLE_BRACKET ">"
-#define TOKEN_CLOSING_TRIANGLE_BRACKET_2 ">>"
-#define TOKEN_OPENING_PARENTHESIS "("
-#define TOKEN_CLOSING_PARENTHESIS ")"
-#define TOKEN_SEMICOLON ";"
+#define TOKEN_TEXT_AMP "&"
+#define TOKEN_TEXT_AMP_2 "&&"
+#define TOKEN_TEXT_PIPE "|"
+#define TOKEN_TEXT_PIPE_2 "||"
+#define TOKEN_TEXT_OPENING_TRIANGLE_BRACKET "<"
+#define TOKEN_TEXT_CLOSING_TRIANGLE_BRACKET ">"
+#define TOKEN_TEXT_CLOSING_TRIANGLE_BRACKET_2 ">>"
+#define TOKEN_TEXT_OPENING_PARENTHESIS "("
+#define TOKEN_TEXT_CLOSING_PARENTHESIS ")"
+#define TOKEN_TEXT_SEMICOLON ";"
 
 /**
- * The order of the separators matters. Longest separators first.
+ * The order matters. Longest string first.
 */
 static const char *const SEPARATOR_TOKENS[] = {
-    TOKEN_AMP_2,
-    TOKEN_PIPE_2,
-    TOKEN_CLOSING_TRIANGLE_BRACKET_2,
-    TOKEN_AMP,
-    TOKEN_PIPE,
-    TOKEN_OPENING_TRIANGLE_BRACKET,
-    TOKEN_CLOSING_TRIANGLE_BRACKET,
-    TOKEN_OPENING_PARENTHESIS,
-    TOKEN_CLOSING_PARENTHESIS,
-    TOKEN_SEMICOLON
+    TOKEN_TEXT_AMP_2,
+    TOKEN_TEXT_PIPE_2,
+    TOKEN_TEXT_CLOSING_TRIANGLE_BRACKET_2,
+    TOKEN_TEXT_AMP,
+    TOKEN_TEXT_PIPE,
+    TOKEN_TEXT_OPENING_TRIANGLE_BRACKET,
+    TOKEN_TEXT_CLOSING_TRIANGLE_BRACKET,
+    TOKEN_TEXT_OPENING_PARENTHESIS,
+    TOKEN_TEXT_CLOSING_PARENTHESIS,
+    TOKEN_TEXT_SEMICOLON
 };
 
 static struct tokenize_data *tokenize_data_create(struct dynamic_array *tokens)
@@ -63,11 +63,56 @@ struct tokenizer *tokenizer_create()
     return t;
 }
 
-static void tokenizer_add_token(struct tokenizer *t, struct dynamic_array *array, bool separator)
+static enum token_type get_token_type_by_token_text(const char *text)
+{
+    if (!strcmp(text, TOKEN_TEXT_AMP)) {
+        return TOKEN_TYPE_ASYNC;
+    }
+
+    if (!strcmp(text, TOKEN_TEXT_AMP_2)) {
+        return TOKEN_TYPE_AND;
+    }
+
+    if (!strcmp(text, TOKEN_TEXT_PIPE)) {
+        return TOKEN_TYPE_PIPE;
+    }
+
+    if (!strcmp(text, TOKEN_TEXT_PIPE_2)) {
+        return TOKEN_TYPE_OR;
+    }
+
+    if (!strcmp(text, TOKEN_TEXT_OPENING_TRIANGLE_BRACKET)) {
+        return TOKEN_TYPE_REDIRECT_INPUT;
+    }
+
+    if (!strcmp(text, TOKEN_TEXT_CLOSING_TRIANGLE_BRACKET)) {
+        return TOKEN_TYPE_REDIRECT_OUTPUT;
+    }
+
+    if (!strcmp(text, TOKEN_TEXT_CLOSING_TRIANGLE_BRACKET_2)) {
+        return TOKEN_TYPE_REDIRECT_OUTPUT_APPEND;
+    }
+
+    if (!strcmp(text, TOKEN_TEXT_OPENING_PARENTHESIS)) {
+        return TOKEN_TYPE_SUBSHELL_START;
+    }
+
+    if (!strcmp(text, TOKEN_TEXT_CLOSING_PARENTHESIS)) {
+        return TOKEN_TYPE_SUBSHELL_END;
+    }
+
+    if (!strcmp(text, TOKEN_TEXT_SEMICOLON)) {
+        return TOKEN_TYPE_COMMAND_SEPARATOR;
+    }
+
+    return TOKEN_TYPE_WORD;
+}
+
+static void tokenizer_add_token(struct tokenizer *t, struct dynamic_array *array)
 {
     struct token token;
-    token.token = create_string_from_array(array->ptr, array->len);
-    token.separator = separator;
+    token.text = create_string_from_array(array->ptr, array->len);
+    token.type = get_token_type_by_token_text(token.text);
     dynamic_array_append(t->tokens, &token);
 }
 
@@ -102,12 +147,12 @@ static void tokenizer_handle_separator_token(struct tokenizer *t, char c)
                     t->within_word = false;
 
                     if (t->tmp_word->len) {
-                        tokenizer_add_token(t, t->tmp_word, false);
+                        tokenizer_add_token(t, t->tmp_word);
                         t->tmp_word->len = 0;
                     }
                     
                     t->tmp_separator->len--;
-                    tokenizer_add_token(t, t->tmp_separator, true);
+                    tokenizer_add_token(t, t->tmp_separator);
                     t->tmp_separator->len = 0;
                 }
 
@@ -138,7 +183,7 @@ void tokenizer_tokenize(struct tokenizer *t, const char *str, struct tokenize_da
             }
         } else if ((c == ' ' || c == '\t' || c == '\n') && !t->quote_mode_enabled) {
             if (t->within_word) {
-                tokenizer_add_token(t, t->tmp_word, false);
+                tokenizer_add_token(t, t->tmp_word);
                 t->tmp_word->len = 0;
             }
 

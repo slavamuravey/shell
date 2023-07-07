@@ -12,12 +12,13 @@ run: clean shell
 
 -include ast.mk
 -include dynamic_array.mk
+-include tokenizer.mk
 
 shell: main.c $(OBJMODULES)
 	$(CC) $(CFLAGS) $^ -o $@
 
 .PHONY: test
-test: ast_test_run dynamic_array_test_run
+test: ast_test_run dynamic_array_test_run tokenizer_test_run
 
 .PHONY: clean
 clean:
