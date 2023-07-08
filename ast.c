@@ -108,6 +108,8 @@ static void ast_destroy_command(struct ast *ast)
     }
     free(words);
     free(words_array);
+    free(redirects);
+    free(redirects_array);
 }
 
 static void ast_destroy_pipeline(struct ast *ast)

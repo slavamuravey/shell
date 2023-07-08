@@ -37,6 +37,7 @@ void test_ast_script_creation()
     words2 = ast2->data.command.words->ptr;
     printf("%s\n", words1[0]);
     printf("%s\n", words2[0]);
+    ast_destroy(script);
 }
 
 void test_ast_pipeline_creation()
@@ -73,6 +74,7 @@ void test_ast_pipeline_creation()
     words2 = ast2->data.command.words->ptr;
     printf("%s\n", words1[0]);
     printf("%s\n", words2[0]);
+    ast_destroy(pipeline);
 }
 
 void test_ast_command_creation()
@@ -97,6 +99,7 @@ void test_ast_command_creation()
     command_redirect = command_redirects[0];
 
     printf("%d %s\n", command_redirect->type, command_redirect->file);
+    ast_destroy(command);
 }
 
 int main()
