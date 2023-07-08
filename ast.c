@@ -10,33 +10,33 @@ static struct ast *ast_create(enum ast_type type, union ast_data data)
     return ast;
 }
 
-struct ast *ast_create_script(struct dynamic_array *asts)
+struct ast *ast_create_script()
 {
     struct ast *ast;
     union ast_data data;
-    data.script.asts = asts;
+    data.script.asts = dynamic_array_create(4, sizeof(struct ast));
     ast = ast_create(AST_TYPE_SCRIPT, data);
 
     return ast;
 }
 
-struct ast *ast_create_command(char **argv, struct dynamic_array *redirects, bool async)
+struct ast *ast_create_command(char **argv, bool async)
 {
     struct ast *ast;
     union ast_data data;
     data.command.argv = argv;
-    data.command.redirects = redirects;
+    data.command.redirects = dynamic_array_create(4, sizeof(struct ast_data_command_redirect));
     data.command.async = async;
     ast = ast_create(AST_TYPE_COMMAND, data);
 
     return ast;
 }
 
-struct ast *ast_create_pipeline(struct dynamic_array *asts, bool async)
+struct ast *ast_create_pipeline(bool async)
 {
     struct ast *ast;
     union ast_data data;
-    data.pipeline.asts = asts;
+    data.pipeline.asts = dynamic_array_create(4, sizeof(struct ast));
     data.command.async = async;
     ast = ast_create(AST_TYPE_PIPELINE, data);
 

@@ -35,11 +35,10 @@ struct parser *parser_create()
 
 void parser_parse(struct parser *p, const struct dynamic_array *tokens, struct parse_data **data, struct parse_error **error)
 {
-    struct ast *ast;
-    char *argv[] = {NULL};
+    struct ast *root;
     p->tokens = tokens;
-    ast = ast_create_command(argv, NULL, false);
-    *data = parse_data_create(ast);
+    root = ast_create_script();
+    *data = parse_data_create(root);
     parser_reset(p);
 }
 
