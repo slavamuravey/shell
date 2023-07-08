@@ -55,11 +55,11 @@ struct ast *ast_create_logical_expression(enum ast_data_logical_expression_type 
     return ast;
 }
 
-struct ast *ast_create_subshell(char *cmd, bool async)
+struct ast *ast_create_subshell(bool async)
 {
     struct ast *ast;
     union ast_data data;
-    data.subshell.cmd = cmd;
+    data.subshell.script = ast_create_script();
     data.command.async = async;
     ast = ast_create(AST_TYPE_SUBSHELL, data);
 
@@ -110,13 +110,42 @@ static void ast_destroy_command(struct ast *ast)
     free(words_array);
 }
 
+static void ast_destroy_pipeline(struct ast *ast)
+{
+    struct dynamic_array *asts_array = ast->data.pipeline.asts;
+    int i;
+    struct ast **asts = asts_array->ptr;
+    for (i = 0; i < asts_array->len; i++) {
+        ast_destroy(asts[i]);
+    }
+    free(asts);
+    free(asts_array);
+}
+
+static void ast_destroy_logical_expression(struct ast *ast)
+{
+    ast_destroy(ast->data.logical_expression.left);
+    ast_destroy(ast->data.logical_expression.right);
+}
+
+static void ast_destroy_subshell(struct ast *ast)
+{
+    ast_destroy(ast->data.subshell.script);
+}
+
 void ast_destroy(struct ast *ast)
 {
     if (ast->type == AST_TYPE_SCRIPT) {
         ast_destroy_script(ast);
-    }
-    if (ast->type == AST_TYPE_COMMAND) {
+    } else if (ast->type == AST_TYPE_COMMAND) {
         ast_destroy_command(ast);
+    } else if (ast->type == AST_TYPE_PIPELINE) {
+        ast_destroy_pipeline(ast);
+    } else if (ast->type == AST_TYPE_LOGICAL_EXPRESSION) {
+        ast_destroy_logical_expression(ast);
+    } else if (ast->type == AST_TYPE_SUBSHELL) {
+        ast_destroy_subshell(ast);
     }
+
     free(ast);
 }
