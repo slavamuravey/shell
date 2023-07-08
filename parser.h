@@ -6,7 +6,7 @@
 
 struct parser {
     size_t pos;
-    struct dynamic_array *tokens;
+    const struct dynamic_array *tokens;
 };
 
 struct parse_data {

@@ -23,6 +23,7 @@ struct token {
     char *text;
 };
 
+struct token *token_create(enum token_type type, char *text);
 struct dynamic_array *tokens_create();
 void tokens_destroy(struct dynamic_array *tokens);
 

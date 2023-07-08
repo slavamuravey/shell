@@ -110,9 +110,8 @@ static enum token_type get_token_type_by_token_text(const char *text)
 
 static void tokenizer_add_token(struct tokenizer *t, struct dynamic_array *array)
 {
-    struct token token;
-    token.text = create_string_from_array(array->ptr, array->len);
-    token.type = get_token_type_by_token_text(token.text);
+    char *text = create_string_from_array(array->ptr, array->len);
+    struct token *token = token_create(get_token_type_by_token_text(text), text);
     dynamic_array_append(t->tokens, &token);
 }
 

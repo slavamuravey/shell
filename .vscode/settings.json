@@ -27,6 +27,7 @@
         "stdio.h": "c",
         "compare": "c",
         "utility": "c",
-        "system_error": "c"
+        "system_error": "c",
+        "strings.h": "c"
     }
 }

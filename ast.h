@@ -9,7 +9,7 @@ struct ast_data_script {
 };
 
 struct ast_data_command {
-    char **argv;
+    struct dynamic_array *words;
     struct dynamic_array *redirects;
     bool async;
 };
@@ -68,7 +68,7 @@ struct ast {
 };
 
 struct ast *ast_create_script();
-struct ast *ast_create_command(char **argv, bool async);
+struct ast *ast_create_command(bool async);
 struct ast *ast_create_pipeline(bool async);
 struct ast *ast_create_logical_expression(enum ast_data_logical_expression_type type, struct ast *left, struct ast *right);
 struct ast *ast_create_subshell(char *cmd, bool async);

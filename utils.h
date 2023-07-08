@@ -4,5 +4,6 @@
 #include <unistd.h>
 
 char *create_string_from_array(const char *src, size_t len);
+char *dupstr(const char *str);
 
 #endif
