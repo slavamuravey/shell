@@ -110,7 +110,10 @@ void test_tokenizer_tokenize()
         {TOKEN_TYPE_WORD, "input.txt"},
         {TOKEN_TYPE_SUBSHELL_END, ")"},
         {TOKEN_TYPE_REDIRECT_OUTPUT, ">"},
-        {TOKEN_TYPE_WORD, "file3.txt"}
+        {TOKEN_TYPE_WORD, "file3.txt"},
+        {TOKEN_TYPE_ASYNC, "&"},
+        {TOKEN_TYPE_WORD, "echo"},
+        {TOKEN_TYPE_WORD, "hello"},
     };
 
     struct token tokens_array2[] = {
@@ -120,7 +123,7 @@ void test_tokenizer_tokenize()
     
     expected_data.tokens = tokens_dynamic_array_create(tokens_array1, sizeof(tokens_array1) / sizeof(*tokens_array1));
     run_tokenizer_tokenize_testcase(" ls -al | cat > fil\"e.t\"xt;   "
-    "(true && false || ps axu >> file2.txt < input.txt) > file3.txt\n", &expected_data, NULL);
+    "(true && false || ps axu >> file2.txt < input.txt) > file3.txt& echo \"hello\"\n", &expected_data, NULL);
     free(expected_data.tokens);
     expected_data.tokens = NULL;
 
