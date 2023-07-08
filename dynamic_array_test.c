@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "dynamic_array.h"
 
 struct item {
@@ -39,6 +40,8 @@ void test_dynamic_array_struct_item()
         struct item item = data[i];
         printf("str: %s, number: %d\n", item.str, item.number);
     }
+    free(data);
+    free(da);
 }
 
 int main()
