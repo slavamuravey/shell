@@ -152,22 +152,22 @@ static void shell_exec(struct shell *s, const char *str)
 void shell_run(struct shell *s)
 {
     int c;
-    struct dynamic_array *da = dynamic_array_create(4, sizeof(char));
+    struct dynamic_array *chars = dynamic_array_create(4, sizeof(char));
 
     shell_print_input_prompt(s);
     while ((c = getchar()) != EOF) {
-        dynamic_array_append(da, &c);
+        dynamic_array_append(chars, &c);
         if (c == '\n') {
-            char *str = create_string_from_array(da->ptr, da->len);
+            char *str = create_string_from_array(chars->ptr, chars->len);
             shell_exec(s, str);
-            da->len = 0;
+            chars->len = 0;
             free(str);
             shell_print_input_prompt(s);
         }
     }
 
-    free(da->ptr);
-    free(da);
+    free(chars->ptr);
+    free(chars);
 
     if (isatty(STDIN_FILENO)) {
         putchar('\n');

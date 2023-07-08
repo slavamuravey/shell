@@ -5,6 +5,8 @@
 #include "ast.h"
 
 struct parser {
+    size_t pos;
+    struct dynamic_array *tokens;
 };
 
 struct parse_data {
@@ -16,7 +18,7 @@ struct parse_error {
 };
 
 struct parser *parser_create();
-void parser_parse(struct parser *p, struct dynamic_array *tokens, struct parse_data **data, struct parse_error **error);
+void parser_parse(struct parser *p, const struct dynamic_array *tokens, struct parse_data **data, struct parse_error **error);
 void parser_destroy(struct parser *p);
 
 #endif

@@ -18,19 +18,29 @@ static struct parse_error *parse_error_create(char *message)
     return error;
 }
 
+static void parser_reset(struct parser *p)
+{
+    p->pos = 0;
+    p->tokens = NULL;
+}
+
 struct parser *parser_create()
 {
     struct parser *p = malloc(sizeof(struct parser));
+    p->pos = 0;
+    p->tokens = NULL;
 
     return p;
 }
 
-void parser_parse(struct parser *p, struct dynamic_array *tokens, struct parse_data **data, struct parse_error **error)
+void parser_parse(struct parser *p, const struct dynamic_array *tokens, struct parse_data **data, struct parse_error **error)
 {
     struct ast *ast;
     char *argv[] = {NULL};
+    p->tokens = tokens;
     ast = ast_create_command(argv, NULL, false);
     *data = parse_data_create(ast);
+    parser_reset(p);
 }
 
 void parser_destroy(struct parser *p)
