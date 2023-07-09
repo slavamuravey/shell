@@ -16,29 +16,35 @@ struct shell *shell_create(struct tokenizer *t, struct parser *p)
     return s;
 }
 
+static bool isrepl()
+{
+    return isatty(STDIN_FILENO);
+}
+
 static void shell_print_input_prompt(struct shell *s)
 {
-    if (isatty(STDIN_FILENO)) {
+    if (isrepl()) {
         printf("> ");
         fflush(stdout);
     }
 }
 
-static char **shell_create_cmd(struct shell *s, struct dynamic_array *tokens)
+static char **shell_create_cmd(struct shell *s, struct token **tokens, size_t len)
 {
     char **array;
     int i;
-    struct token **data;
 
-    if (tokens->len == 0) {
+    if (len == 0) {
         return NULL;
     }
 
-    array = malloc((tokens->len + 1) * sizeof(char*));
-    data = tokens->ptr;
+    array = malloc((len + 1) * sizeof(char*));
     
-    for (i = 0; i < tokens->len; i++) {
-        struct token *token = data[i];
+    for (i = 0; i < len; i++) {
+        struct token *token = tokens[i];
+        if (token->type != TOKEN_TYPE_WORD) {
+            break;
+        }
         array[i] = token->text;
     }
 
@@ -47,25 +53,19 @@ static char **shell_create_cmd(struct shell *s, struct dynamic_array *tokens)
     return array;
 }
 
-static void shell_exec_parse(struct shell *s, struct dynamic_array *tokens)
+static void process_cmd(struct shell *s, struct token **tokens, size_t len)
 {
     pid_t pid;
     char **cmd;
-    struct token **data;
-    struct token *token1;
 
-    if (tokens->len == 0) {
+    if (len == 0) {     
         return;
     }
 
-    data = tokens->ptr;
-    token1 = data[0];
-
-    if (!strcmp(token1->text, "cd")) {
+    if (!strcmp(tokens[0]->text, "cd")) {
         char *dir;
-        if (tokens->len > 1) {
-            struct token *token2 = data[1];
-            dir = token2->text;
+        if (len > 1 && tokens[1]->type != TOKEN_TYPE_EXPRESSION_END) {
+            dir = tokens[1]->text;
         } else {
             char *home_dir = getenv("HOME");
             if (!home_dir) {
@@ -82,7 +82,7 @@ static void shell_exec_parse(struct shell *s, struct dynamic_array *tokens)
         return;
     }
 
-    cmd = shell_create_cmd(s, tokens);
+    cmd = shell_create_cmd(s, tokens, len);
 
     pid = fork();
     if (pid == -1) {
@@ -99,6 +99,27 @@ static void shell_exec_parse(struct shell *s, struct dynamic_array *tokens)
     free(cmd);
 
     wait(NULL);
+}
+
+static void shell_exec_parse(struct shell *s, struct dynamic_array *tokens)
+{
+    struct token **tokens_ptr_base;
+    struct token **tokens_ptr;
+    int i;
+
+    if (tokens->len == 0) {
+        return;
+    }
+
+    tokens_ptr_base = tokens->ptr;
+    tokens_ptr = tokens->ptr;
+    for (i = 0; i < tokens->len; i++) {
+        if ((*tokens_ptr)->type == TOKEN_TYPE_EXPRESSION_END) {
+            process_cmd(s, tokens_ptr_base, tokens_ptr - tokens_ptr_base);
+            tokens_ptr_base = tokens_ptr + 1;
+        }
+        tokens_ptr++;
+    }
 }
 
 static void shell_exec(struct shell *s, const char *str)
@@ -157,13 +178,19 @@ void shell_run(struct shell *s)
     shell_print_input_prompt(s);
     while ((c = getchar()) != EOF) {
         dynamic_array_append(chars, &c);
-        if (c == '\n') {
+        if (c == '\n' && isrepl()) {
             char *str = create_string_from_array(chars->ptr, chars->len);
             shell_exec(s, str);
             chars->len = 0;
             free(str);
             shell_print_input_prompt(s);
         }
+    }
+
+    if (!isrepl()) {
+        char *str = create_string_from_array(chars->ptr, chars->len);
+        shell_exec(s, str);
+        free(str);
     }
 
     free(chars->ptr);

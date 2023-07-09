@@ -90,8 +90,10 @@ void test_tokenizer_tokenize()
 {
     struct tokenize_data expected_data;
     struct tokenize_error expected_error;
-    struct token *tokens_array1[25];
-    struct token *tokens_array2[2];
+    struct token *tokens_array1[26];
+    struct token *tokens_array2[3];
+    struct token *tokens_array3[1];
+    struct token *tokens_array4[1];
     
     tokens_array1[0] = token_create(TOKEN_TYPE_WORD, dupstr("ls"));
     tokens_array1[1] = token_create(TOKEN_TYPE_WORD, dupstr("-al"));
@@ -118,17 +120,27 @@ void test_tokenizer_tokenize()
     tokens_array1[22] = token_create(TOKEN_TYPE_WORD, dupstr("&"));
     tokens_array1[23] = token_create(TOKEN_TYPE_WORD, dupstr("echo"));
     tokens_array1[24] = token_create(TOKEN_TYPE_WORD, dupstr("hello"));
-
-    tokens_array2[0] = token_create(TOKEN_TYPE_WORD, dupstr("ps"));
-    tokens_array2[1] = token_create(TOKEN_TYPE_WORD, dupstr("axu"));
-    
+    tokens_array1[25] = token_create(TOKEN_TYPE_EXPRESSION_END, dupstr("\n"));
     expected_data.tokens = tokens_dynamic_array_create(tokens_array1, sizeof(tokens_array1) / sizeof(*tokens_array1));
     run_tokenizer_tokenize_testcase(" ls -al | cat > fil\"e.t\"xt;   "
     "(true && false || ps axu >> file2.txt < input.txt) > file3.txt& \"&\" echo \"hello\"\n", &expected_data, NULL);
     tokens_destroy(expected_data.tokens);
 
+    tokens_array2[0] = token_create(TOKEN_TYPE_WORD, dupstr("ps"));
+    tokens_array2[1] = token_create(TOKEN_TYPE_WORD, dupstr("axu"));
+    tokens_array2[2] = token_create(TOKEN_TYPE_EXPRESSION_END, dupstr("\n"));
     expected_data.tokens = tokens_dynamic_array_create(tokens_array2, sizeof(tokens_array2) / sizeof(*tokens_array2));
     run_tokenizer_tokenize_testcase(" ps axu\n", &expected_data, NULL);
+    tokens_destroy(expected_data.tokens);
+
+    tokens_array3[0] = token_create(TOKEN_TYPE_WORD, dupstr("ps"));
+    expected_data.tokens = tokens_dynamic_array_create(tokens_array3, sizeof(tokens_array3) / sizeof(*tokens_array3));
+    run_tokenizer_tokenize_testcase("ps\\", &expected_data, NULL);
+    tokens_destroy(expected_data.tokens);
+
+    tokens_array4[0] = token_create(TOKEN_TYPE_WORD, dupstr("ps"));
+    expected_data.tokens = tokens_dynamic_array_create(tokens_array4, sizeof(tokens_array4) / sizeof(*tokens_array4));
+    run_tokenizer_tokenize_testcase("ps", &expected_data, NULL);
     tokens_destroy(expected_data.tokens);
 
     expected_error.message = "unmatched quotes";
