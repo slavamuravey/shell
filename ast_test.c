@@ -6,7 +6,10 @@
 void test_ast_script_creation()
 {
     struct ast *script = ast_create_script();
-    struct ast **script_asts;
+    struct ast *expression = ast_create_expression();
+    struct ast **expression_asts;
+    struct ast **script_expressions;
+    struct ast *script_expression;
     struct ast *ast1;
     struct ast *ast2;
     char **words1;
@@ -26,12 +29,16 @@ void test_ast_script_creation()
     word = dupstr("axu");
     dynamic_array_append(cmd2->data.command.words, &word);
 
-    dynamic_array_append(script->data.script.asts, &cmd1);
-    dynamic_array_append(script->data.script.asts, &cmd2);
+    dynamic_array_append(expression->data.expression.asts, &cmd1);
+    dynamic_array_append(expression->data.expression.asts, &cmd2);
+
+    dynamic_array_append(script->data.script.expressions, &expression);
     
-    script_asts = script->data.script.asts->ptr;
-    ast1 = script_asts[0];
-    ast2 = script_asts[1];
+    script_expressions = script->data.script.expressions->ptr;
+    script_expression = script_expressions[0];
+    expression_asts = script_expression->data.expression.asts->ptr;
+    ast1 = expression_asts[0];
+    ast2 = expression_asts[1];
 
     words1 = ast1->data.command.words->ptr;
     words2 = ast2->data.command.words->ptr;
