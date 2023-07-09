@@ -108,10 +108,10 @@ static enum token_type get_token_type_by_token_text(const char *text)
     return TOKEN_TYPE_WORD;
 }
 
-static void tokenizer_add_token(struct tokenizer *t, struct dynamic_array *array)
+static void tokenizer_add_token(struct tokenizer *t, struct dynamic_array *array, bool separator)
 {
     char *text = create_string_from_array(array->ptr, array->len);
-    struct token *token = token_create(get_token_type_by_token_text(text), text);
+    struct token *token = token_create(separator ? get_token_type_by_token_text(text) : TOKEN_TYPE_WORD, text);
     dynamic_array_append(t->tokens, &token);
 }
 
@@ -129,10 +129,6 @@ static void tokenizer_handle_separator_token(struct tokenizer *t, char c)
     int i;
     size_t tokens_count = sizeof(SEPARATOR_TOKENS) / sizeof(*SEPARATOR_TOKENS);
 
-    if (t->quote_mode_enabled) {
-        return;
-    }
-
     do {
         dynamic_array_append(t->tmp_separator, &c);
         
@@ -146,12 +142,12 @@ static void tokenizer_handle_separator_token(struct tokenizer *t, char c)
                     t->within_word = false;
 
                     if (t->tmp_word->len) {
-                        tokenizer_add_token(t, t->tmp_word);
+                        tokenizer_add_token(t, t->tmp_word, false);
                         t->tmp_word->len = 0;
                     }
                     
                     t->tmp_separator->len--;
-                    tokenizer_add_token(t, t->tmp_separator);
+                    tokenizer_add_token(t, t->tmp_separator, true);
                     t->tmp_separator->len = 0;
                 }
 
@@ -172,7 +168,9 @@ void tokenizer_tokenize(struct tokenizer *t, const char *str, struct tokenize_da
     
     for (; *p; p++) {
         char c = *p;
-        tokenizer_handle_separator_token(t, c);
+        if (!t->quote_mode_enabled && !t->char_escape_mode_enabled) {
+            tokenizer_handle_separator_token(t, c);
+        }
 
         if (c == '\\' && !t->char_escape_mode_enabled) {
             t->char_escape_mode_enabled = true;
@@ -184,7 +182,7 @@ void tokenizer_tokenize(struct tokenizer *t, const char *str, struct tokenize_da
             }
         } else if ((c == ' ' || c == '\t' || c == '\n') && !t->quote_mode_enabled) {
             if (t->within_word) {
-                tokenizer_add_token(t, t->tmp_word);
+                tokenizer_add_token(t, t->tmp_word, false);
                 t->tmp_word->len = 0;
             }
 

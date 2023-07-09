@@ -90,7 +90,7 @@ void test_tokenizer_tokenize()
 {
     struct tokenize_data expected_data;
     struct tokenize_error expected_error;
-    struct token *tokens_array1[24];
+    struct token *tokens_array1[25];
     struct token *tokens_array2[2];
     
     tokens_array1[0] = token_create(TOKEN_TYPE_WORD, dupstr("ls"));
@@ -115,15 +115,16 @@ void test_tokenizer_tokenize()
     tokens_array1[19] = token_create(TOKEN_TYPE_REDIRECT_OUTPUT, dupstr(">"));
     tokens_array1[20] = token_create(TOKEN_TYPE_WORD, dupstr("file3.txt"));
     tokens_array1[21] = token_create(TOKEN_TYPE_ASYNC, dupstr("&"));
-    tokens_array1[22] = token_create(TOKEN_TYPE_WORD, dupstr("echo"));
-    tokens_array1[23] = token_create(TOKEN_TYPE_WORD, dupstr("hello"));
+    tokens_array1[22] = token_create(TOKEN_TYPE_WORD, dupstr("&"));
+    tokens_array1[23] = token_create(TOKEN_TYPE_WORD, dupstr("echo"));
+    tokens_array1[24] = token_create(TOKEN_TYPE_WORD, dupstr("hello"));
 
     tokens_array2[0] = token_create(TOKEN_TYPE_WORD, dupstr("ps"));
     tokens_array2[1] = token_create(TOKEN_TYPE_WORD, dupstr("axu"));
     
     expected_data.tokens = tokens_dynamic_array_create(tokens_array1, sizeof(tokens_array1) / sizeof(*tokens_array1));
     run_tokenizer_tokenize_testcase(" ls -al | cat > fil\"e.t\"xt;   "
-    "(true && false || ps axu >> file2.txt < input.txt) > file3.txt& echo \"hello\"\n", &expected_data, NULL);
+    "(true && false || ps axu >> file2.txt < input.txt) > file3.txt& \"&\" echo \"hello\"\n", &expected_data, NULL);
     tokens_destroy(expected_data.tokens);
 
     expected_data.tokens = tokens_dynamic_array_create(tokens_array2, sizeof(tokens_array2) / sizeof(*tokens_array2));
