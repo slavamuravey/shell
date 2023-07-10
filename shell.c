@@ -34,10 +34,6 @@ static char **shell_create_cmd(struct shell *s, struct token **tokens, size_t le
     char **array;
     int i;
 
-    if (len == 0) {
-        return NULL;
-    }
-
     array = malloc((len + 1) * sizeof(char*));
     
     for (i = 0; i < len; i++) {
