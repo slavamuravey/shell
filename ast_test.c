@@ -6,12 +6,9 @@
 void test_ast_script_creation()
 {
     struct ast *script = ast_create_script();
-    struct ast *expression = ast_create_expression();
-    struct ast **expression_asts;
     struct ast **script_expressions;
-    struct ast *script_expression;
-    struct ast *ast1;
-    struct ast *ast2;
+    struct ast *script_expression1;
+    struct ast *script_expression2;
     char **words1;
     char **words2;
     char *word;
@@ -29,19 +26,15 @@ void test_ast_script_creation()
     word = dupstr("axu");
     dynamic_array_append(cmd2->data.command.words, &word);
 
-    dynamic_array_append(expression->data.expression.asts, &cmd1);
-    dynamic_array_append(expression->data.expression.asts, &cmd2);
-
-    dynamic_array_append(script->data.script.expressions, &expression);
+    dynamic_array_append(script->data.script.expressions, &cmd1);
+    dynamic_array_append(script->data.script.expressions, &cmd2);
     
     script_expressions = script->data.script.expressions->ptr;
-    script_expression = script_expressions[0];
-    expression_asts = script_expression->data.expression.asts->ptr;
-    ast1 = expression_asts[0];
-    ast2 = expression_asts[1];
+    script_expression1 = script_expressions[0];
+    script_expression2 = script_expressions[1];
 
-    words1 = ast1->data.command.words->ptr;
-    words2 = ast2->data.command.words->ptr;
+    words1 = script_expression1->data.command.words->ptr;
+    words2 = script_expression2->data.command.words->ptr;
     printf("%s\n", words1[0]);
     printf("%s\n", words2[0]);
     ast_destroy(script);

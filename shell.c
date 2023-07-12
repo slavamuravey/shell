@@ -60,7 +60,7 @@ static void process_cmd(struct shell *s, struct token **tokens, size_t len)
 
     if (!strcmp(tokens[0]->text, "cd")) {
         char *dir;
-        if (len > 1 && tokens[1]->type != TOKEN_TYPE_EXPRESSION_END) {
+        if (len > 1 && tokens[1]->type != TOKEN_TYPE_EXPRESSION_SEPARATOR_2) {
             dir = tokens[1]->text;
         } else {
             char *home_dir = getenv("HOME");
@@ -110,7 +110,7 @@ static void shell_exec_parse(struct shell *s, struct dynamic_array *tokens)
     tokens_ptr_base = tokens->ptr;
     tokens_ptr = tokens->ptr;
     for (i = 0; i < tokens->len; i++) {
-        if ((*tokens_ptr)->type == TOKEN_TYPE_EXPRESSION_END) {
+        if ((*tokens_ptr)->type == TOKEN_TYPE_EXPRESSION_SEPARATOR_2) {
             process_cmd(s, tokens_ptr_base, tokens_ptr - tokens_ptr_base);
             tokens_ptr_base = tokens_ptr + 1;
         }
@@ -145,6 +145,7 @@ static void shell_exec(struct shell *s, const char *str)
     parser_parse(s->p, tokens, &p_data, &p_error);
     if (p_error) {
         char *message = p_error->message;
+        tokens_destroy(tokens);
         ast_destroy(p_data->ast);
         free(p_data);
         free(p_error);

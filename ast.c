@@ -20,16 +20,6 @@ struct ast *ast_create_script()
     return ast;
 }
 
-struct ast *ast_create_expression()
-{
-    struct ast *ast;
-    union ast_data data;
-    data.expression.asts = dynamic_array_create(4, sizeof(struct ast*));
-    ast = ast_create(AST_TYPE_EXPRESSION, data);
-
-    return ast;
-}
-
 struct ast *ast_create_command(bool async)
 {
     struct ast *ast;
@@ -97,18 +87,6 @@ static void ast_destroy_script(struct ast *ast)
     free(expressions_array);
 }
 
-static void ast_destroy_expression(struct ast *ast)
-{
-    struct dynamic_array *asts_array = ast->data.expression.asts;
-    int i;
-    struct ast **asts = asts_array->ptr;
-    for (i = 0; i < asts_array->len; i++) {
-        ast_destroy(asts[i]);
-    }
-    free(asts);
-    free(asts_array);
-}
-
 static void ast_data_command_redirect_destroy(struct ast_data_command_redirect *redirect)
 {
     free(redirect->file);
@@ -161,8 +139,6 @@ void ast_destroy(struct ast *ast)
 {
     if (ast->type == AST_TYPE_SCRIPT) {
         ast_destroy_script(ast);
-    } else if (ast->type == AST_TYPE_EXPRESSION) {
-        ast_destroy_expression(ast);
     } else if (ast->type == AST_TYPE_COMMAND) {
         ast_destroy_command(ast);
     } else if (ast->type == AST_TYPE_PIPELINE) {

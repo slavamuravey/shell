@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "parser.h"
 #include "token.h"
+#include "utils.h"
 
 static struct parse_data *parse_data_create(struct ast *ast)
 {
@@ -51,49 +52,67 @@ static void parser_match_token(struct parser *p, enum token_type token_type, str
     }
 }
 
-static void parser_parse_expression(struct parser *p, struct ast **ast, char **error_msg)
+static void parser_parse_expression(struct parser *p, struct ast **expression, char **error_msg)
 {
-    struct token *token;
-
-    token = NULL;
-    parser_match_token(p, TOKEN_TYPE_EXPRESSION_END, &token);
-    if (token) {
-        struct ast *expression = ast_create_expression();
-        *ast = expression;
-
-        return;
-    }
-
-    *error_msg = "EOL token expected";
-
-    /* token = NULL;
+    struct token *token = NULL;
     parser_match_token(p, TOKEN_TYPE_WORD, &token);
     if (token) {
-        struct ast *expression = ast_create_expression();
-        dynamic_array_append(expression->data.expression.asts, );
-        *ast = expression;
-    } */
+        struct ast *command = ast_create_command(false);
+        char *word = dupstr(token->text);
+        dynamic_array_append(command->data.command.words, &word);
+        *expression = command;
+    }
+}
+
+static void parser_parse_expression_separator(struct parser *p, struct ast *expression, char **error_msg)
+{
+    struct token *expression_separator_token = NULL;
+    if (!expression) {
+        parser_match_token(p, TOKEN_TYPE_EXPRESSION_SEPARATOR_2, &expression_separator_token);
+    } else {
+        parser_match_token(p, TOKEN_TYPE_EXPRESSION_SEPARATOR_1, &expression_separator_token);
+
+        if (!expression_separator_token) {
+            parser_match_token(p, TOKEN_TYPE_EXPRESSION_SEPARATOR_2, &expression_separator_token);
+
+            if (!expression_separator_token) {
+                *error_msg = "EXPRESSION_SEPARATOR token expected";
+
+                return;
+            }
+        }
+    }
+
+    if (!expression_separator_token) {
+        *error_msg = "unexpected token";
+    }
 }
 
 void parser_parse(struct parser *p, const struct dynamic_array *tokens, struct parse_data **data, struct parse_error **error)
 {
     struct ast *root;
+    char *error_msg = NULL;
     p->tokens = tokens;
     root = ast_create_script();
-    /* while (p->pos < p->tokens->len) {
-        struct ast *expresstion = NULL;
-        char *error_msg = NULL;
-        parser_parse_expression(p, &expresstion, &error_msg);
-
+    while (p->pos < p->tokens->len) {
+        struct ast *expression = NULL;
+        parser_parse_expression(p, &expression, &error_msg);
         if (error_msg) {
-            *error = parse_error_create(error_msg);
-
             break;
         }
 
-        dynamic_array_append(root->data.script.expressions, &expresstion);
-        
-    } */
+        parser_parse_expression_separator(p, expression, &error_msg);
+        if (error_msg) {
+            break;
+        }
+
+        if (expression) {
+            dynamic_array_append(root->data.script.expressions, &expression);
+        }
+    }
+    if (p->pos < p->tokens->len) {
+        *error = parse_error_create(error_msg);
+    }
     *data = parse_data_create(root);
     parser_reset(p);
 }

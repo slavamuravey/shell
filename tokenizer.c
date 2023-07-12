@@ -17,7 +17,7 @@
 #define TOKEN_TEXT_OPENING_PARENTHESIS "("
 #define TOKEN_TEXT_CLOSING_PARENTHESIS ")"
 #define TOKEN_TEXT_SEMICOLON ";"
-#define TOKEN_TEXT_EXPRESSION_END "\n"
+#define TOKEN_TEXT_EOL "\n"
 
 /**
  * The order matters. Longest string first.
@@ -33,7 +33,7 @@ static const char *const SEPARATOR_TOKENS[] = {
     TOKEN_TEXT_OPENING_PARENTHESIS,
     TOKEN_TEXT_CLOSING_PARENTHESIS,
     TOKEN_TEXT_SEMICOLON,
-    TOKEN_TEXT_EXPRESSION_END
+    TOKEN_TEXT_EOL
 };
 
 static struct tokenize_data *tokenize_data_create(struct dynamic_array *tokens)
@@ -103,11 +103,11 @@ static enum token_type get_token_type_by_token_text(const char *text)
     }
 
     if (!strcmp(text, TOKEN_TEXT_SEMICOLON)) {
-        return TOKEN_TYPE_COMMAND_SEPARATOR;
+        return TOKEN_TYPE_EXPRESSION_SEPARATOR_1;
     }
 
-    if (!strcmp(text, TOKEN_TEXT_EXPRESSION_END)) {
-        return TOKEN_TYPE_EXPRESSION_END;
+    if (!strcmp(text, TOKEN_TEXT_EOL)) {
+        return TOKEN_TYPE_EXPRESSION_SEPARATOR_2;
     }
 
     return TOKEN_TYPE_WORD;
@@ -125,17 +125,17 @@ static void tokenizer_reset(struct tokenizer *t)
 static size_t tokenizer_parse_token(struct tokenizer *t, const char *str)
 {
     int i;
-    size_t tokens_count = sizeof(SEPARATOR_TOKENS) / sizeof(*SEPARATOR_TOKENS);
+    size_t separator_tokens_count = sizeof(SEPARATOR_TOKENS) / sizeof(*SEPARATOR_TOKENS);
     size_t str_len = strlen(str);
     if (!str_len) {
         return 0;
     }
 
-    for (i = 0; i < tokens_count; i++) {
-        const char *token = SEPARATOR_TOKENS[i];
-        size_t token_len = strlen(token);
-        if (!memcmp(str, token, MIN(token_len, str_len))) {
-            if (token_len <= str_len) {
+    for (i = 0; i < separator_tokens_count; i++) {
+        const char *separator_token = SEPARATOR_TOKENS[i];
+        size_t separator_token_len = strlen(separator_token);
+        if (!memcmp(str, separator_token, MIN(separator_token_len, str_len))) {
+            if (separator_token_len <= str_len) {
                 struct token *token_struct;
                 if (t->tmp_word->len) {
                     char *text = create_string_from_array(t->tmp_word->ptr, t->tmp_word->len);
@@ -144,10 +144,10 @@ static size_t tokenizer_parse_token(struct tokenizer *t, const char *str)
                     t->tmp_word->len = 0;
                     t->within_word = false;
                 }
-                token_struct = token_create(get_token_type_by_token_text(token), dupstr(token));
+                token_struct = token_create(get_token_type_by_token_text(separator_token), dupstr(separator_token));
                 dynamic_array_append(t->tokens, &token_struct);
                 
-                return token_len;
+                return separator_token_len;
             }
         }
     }

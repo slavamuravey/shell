@@ -101,7 +101,7 @@ void test_tokenizer_tokenize()
     tokens_array1[3] = token_create(TOKEN_TYPE_WORD, dupstr("cat"));
     tokens_array1[4] = token_create(TOKEN_TYPE_REDIRECT_OUTPUT, dupstr(">"));
     tokens_array1[5] = token_create(TOKEN_TYPE_WORD, dupstr("file.txt"));
-    tokens_array1[6] = token_create(TOKEN_TYPE_COMMAND_SEPARATOR, dupstr(";"));
+    tokens_array1[6] = token_create(TOKEN_TYPE_EXPRESSION_SEPARATOR_1, dupstr(";"));
     tokens_array1[7] = token_create(TOKEN_TYPE_SUBSHELL_START, dupstr("("));
     tokens_array1[8] = token_create(TOKEN_TYPE_WORD, dupstr("true"));
     tokens_array1[9] = token_create(TOKEN_TYPE_AND, dupstr("&&"));
@@ -120,7 +120,7 @@ void test_tokenizer_tokenize()
     tokens_array1[22] = token_create(TOKEN_TYPE_WORD, dupstr("&"));
     tokens_array1[23] = token_create(TOKEN_TYPE_WORD, dupstr("echo"));
     tokens_array1[24] = token_create(TOKEN_TYPE_WORD, dupstr("hello"));
-    tokens_array1[25] = token_create(TOKEN_TYPE_EXPRESSION_END, dupstr("\n"));
+    tokens_array1[25] = token_create(TOKEN_TYPE_EXPRESSION_SEPARATOR_2, dupstr("\n"));
     expected_data.tokens = tokens_dynamic_array_create(tokens_array1, sizeof(tokens_array1) / sizeof(*tokens_array1));
     run_tokenizer_tokenize_testcase(" ls -al | cat > fil\"e.t\"xt;   "
     "(true && false || ps axu >> file2.txt < input.txt) > file3.txt& \"&\" echo \"hello\"\n", &expected_data, NULL);
@@ -128,7 +128,7 @@ void test_tokenizer_tokenize()
 
     tokens_array2[0] = token_create(TOKEN_TYPE_WORD, dupstr("ps"));
     tokens_array2[1] = token_create(TOKEN_TYPE_WORD, dupstr("axu"));
-    tokens_array2[2] = token_create(TOKEN_TYPE_EXPRESSION_END, dupstr("\n"));
+    tokens_array2[2] = token_create(TOKEN_TYPE_EXPRESSION_SEPARATOR_2, dupstr("\n"));
     expected_data.tokens = tokens_dynamic_array_create(tokens_array2, sizeof(tokens_array2) / sizeof(*tokens_array2));
     run_tokenizer_tokenize_testcase(" ps axu\n", &expected_data, NULL);
     tokens_destroy(expected_data.tokens);

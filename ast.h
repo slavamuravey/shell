@@ -8,10 +8,6 @@ struct ast_data_script {
     struct dynamic_array *expressions;
 };
 
-struct ast_data_expression {
-    struct dynamic_array *asts;
-};
-
 struct ast_data_command {
     struct dynamic_array *words;
     struct dynamic_array *redirects;
@@ -19,8 +15,8 @@ struct ast_data_command {
 };
 
 struct ast_data_pipeline {
-    bool async;
     struct dynamic_array *asts;
+    bool async;
 };
 
 enum ast_data_command_redirect_type {
@@ -52,7 +48,6 @@ struct ast_data_subshell {
 
 union ast_data {
     struct ast_data_script script;
-    struct ast_data_expression expression;
     struct ast_data_command command;
     struct ast_data_pipeline pipeline;
     struct ast_data_logical_expression logical_expression;
@@ -61,7 +56,6 @@ union ast_data {
 
 enum ast_type {
     AST_TYPE_SCRIPT,
-    AST_TYPE_EXPRESSION,
     AST_TYPE_COMMAND,
     AST_TYPE_PIPELINE,
     AST_TYPE_LOGICAL_EXPRESSION,
@@ -74,7 +68,6 @@ struct ast {
 };
 
 struct ast *ast_create_script();
-struct ast *ast_create_expression();
 struct ast *ast_create_command(bool async);
 struct ast *ast_create_pipeline(bool async);
 struct ast *ast_create_logical_expression(enum ast_data_logical_expression_type type, struct ast *left, struct ast *right);
