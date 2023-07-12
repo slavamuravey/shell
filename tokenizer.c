@@ -116,6 +116,7 @@ static enum token_type get_token_type_by_token_text(const char *text)
 static void tokenizer_reset(struct tokenizer *t)
 {
     t->quote_mode_enabled = false;
+    t->char_escape_mode_enabled = false;
     t->tmp_word->len = 0;
     t->within_word = false;
     t->tokens = NULL;
