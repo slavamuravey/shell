@@ -71,16 +71,39 @@ static void parser_parse_command(struct parser *p, struct ast **command, char **
 
 static void parser_parse_expression(struct parser *p, struct ast **expression, char **error_msg)
 {
-    struct ast *command = NULL; 
-    parser_parse_command(p, &command, error_msg);
+    struct ast *expression_command = NULL;
+    struct token *logical_expression_token;
+    struct ast *expression_right;
+    parser_parse_command(p, &expression_command, error_msg);
     if (*error_msg) {
         return;
     }
 
-    if (command) {
-        
-        *expression = command;
+    if (expression_command) {
+        *expression = expression_command;
     }
+
+    logical_expression_token = NULL;
+    parser_match_token(p, TOKEN_TYPE_AND, &logical_expression_token);
+    if (!logical_expression_token) {
+        parser_match_token(p, TOKEN_TYPE_OR, &logical_expression_token);
+        if (!logical_expression_token) {
+            return;
+        }
+    }
+
+    expression_right = NULL;
+    parser_parse_expression(p, &expression_right, error_msg);
+    if (*error_msg) {
+        return;
+    }
+
+    if (!expression_right) {
+        *error_msg = "right operand of logical expression expected";
+        return;
+    }
+
+    *expression = ast_create_logical_expression(logical_expression_token->type, *expression, expression_right);
 }
 
 static void parser_parse_expression_separator(struct parser *p, struct ast *expression, char **error_msg)
