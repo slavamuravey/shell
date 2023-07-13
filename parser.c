@@ -52,14 +52,33 @@ static void parser_match_token(struct parser *p, enum token_type token_type, str
     }
 }
 
-static void parser_parse_expression(struct parser *p, struct ast **expression, char **error_msg)
+static void parser_parse_command(struct parser *p, struct ast **command, char **error_msg)
 {
     struct token *token = NULL;
-    parser_match_token(p, TOKEN_TYPE_WORD, &token);
-    if (token) {
-        struct ast *command = ast_create_command(false);
-        char *word = dupstr(token->text);
-        dynamic_array_append(command->data.command.words, &word);
+    do {
+        parser_match_token(p, TOKEN_TYPE_WORD, &token);
+        if (token) {
+            char *word;
+            if (!*command) {
+                *command = ast_create_command(false);
+            }
+
+            word = dupstr(token->text);
+            dynamic_array_append((*command)->data.command.words, &word);
+        }
+    } while (token);
+}
+
+static void parser_parse_expression(struct parser *p, struct ast **expression, char **error_msg)
+{
+    struct ast *command = NULL; 
+    parser_parse_command(p, &command, error_msg);
+    if (*error_msg) {
+        return;
+    }
+
+    if (command) {
+        
         *expression = command;
     }
 }
