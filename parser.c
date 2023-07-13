@@ -76,7 +76,7 @@ static void parser_parse_expression_separator(struct parser *p, struct ast *expr
             parser_match_token(p, TOKEN_TYPE_EXPRESSION_SEPARATOR_2, &expression_separator_token);
 
             if (!expression_separator_token) {
-                *error_msg = "EXPRESSION_SEPARATOR token expected";
+                *error_msg = "expression separator token expected";
 
                 return;
             }
