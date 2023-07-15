@@ -68,10 +68,10 @@ struct ast {
 };
 
 struct ast *ast_create_script();
-struct ast *ast_create_command(bool async);
-struct ast *ast_create_pipeline(bool async);
-struct ast *ast_create_logical_expression(enum ast_data_logical_expression_type type, struct ast *left, struct ast *right);
-struct ast *ast_create_subshell(bool async);
+struct ast *ast_create_command();
+struct ast *ast_create_pipeline();
+struct ast *ast_create_logical_expression(enum ast_data_logical_expression_type type);
+struct ast *ast_create_subshell();
 struct ast_data_command_redirect *ast_data_command_redirect_create(enum ast_data_command_redirect_type type, char *file);
 void ast_destroy(struct ast *ast);
 

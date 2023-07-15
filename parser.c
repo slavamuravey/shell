@@ -60,7 +60,7 @@ static void parser_parse_command(struct parser *p, struct ast **command, char **
         if (token) {
             char *word;
             if (!*command) {
-                *command = ast_create_command(false);
+                *command = ast_create_command();
             }
 
             word = dupstr(token->text);
@@ -73,6 +73,7 @@ static void parser_parse_expression(struct parser *p, struct ast **expression, c
 {
     struct ast *expression_command = NULL;
     struct token *logical_expression_token;
+    struct ast *expression_left;
     struct ast *expression_right;
     parser_parse_command(p, &expression_command, error_msg);
     if (*error_msg) {
@@ -92,8 +93,20 @@ static void parser_parse_expression(struct parser *p, struct ast **expression, c
         }
     }
 
+    expression_left = *expression;
+
+    *expression = ast_create_logical_expression(logical_expression_token->type);
+    (*expression)->data.logical_expression.left = expression_left;
+    
+    if (!expression_left) {
+        *error_msg = "left operand of logical expression expected";
+        return;
+    }
+
     expression_right = NULL;
     parser_parse_expression(p, &expression_right, error_msg);
+    (*expression)->data.logical_expression.right = expression_right;
+
     if (*error_msg) {
         return;
     }
@@ -102,8 +115,6 @@ static void parser_parse_expression(struct parser *p, struct ast **expression, c
         *error_msg = "right operand of logical expression expected";
         return;
     }
-
-    *expression = ast_create_logical_expression(logical_expression_token->type, *expression, expression_right);
 }
 
 static void parser_parse_expression_separator(struct parser *p, struct ast *expression, char **error_msg)
@@ -139,6 +150,7 @@ void parser_parse(struct parser *p, const struct dynamic_array *tokens, struct p
     while (p->pos < p->tokens->len) {
         struct ast *expression = NULL;
         parser_parse_expression(p, &expression, &error_msg);
+        dynamic_array_append(root->data.script.expressions, &expression);
         if (error_msg) {
             break;
         }
@@ -147,12 +159,8 @@ void parser_parse(struct parser *p, const struct dynamic_array *tokens, struct p
         if (error_msg) {
             break;
         }
-
-        if (expression) {
-            dynamic_array_append(root->data.script.expressions, &expression);
-        }
     }
-    if (p->pos < p->tokens->len) {
+    if (error_msg) {
         *error = parse_error_create(error_msg);
     }
     *data = parse_data_create(root);

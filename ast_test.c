@@ -13,8 +13,8 @@ void test_ast_script_creation()
     char **words2;
     char *word;
 
-    struct ast *cmd1 = ast_create_command(false);
-    struct ast *cmd2 = ast_create_command(false);
+    struct ast *cmd1 = ast_create_command();
+    struct ast *cmd2 = ast_create_command();
 
     word = dupstr("ls");
     dynamic_array_append(cmd1->data.command.words, &word);
@@ -42,7 +42,7 @@ void test_ast_script_creation()
 
 void test_ast_pipeline_creation()
 {
-    struct ast *pipeline = ast_create_pipeline(false);
+    struct ast *pipeline = ast_create_pipeline();
     struct ast **pipeline_asts;
     struct ast *ast1;
     struct ast *ast2;
@@ -50,8 +50,8 @@ void test_ast_pipeline_creation()
     char **words2;
     char *word;
 
-    struct ast *cmd1 = ast_create_command(false);
-    struct ast *cmd2 = ast_create_command(false);
+    struct ast *cmd1 = ast_create_command();
+    struct ast *cmd2 = ast_create_command();
 
     word = dupstr("ls");
     dynamic_array_append(cmd1->data.command.words, &word);
@@ -84,7 +84,7 @@ void test_ast_command_creation()
     struct ast_data_command_redirect *command_redirect;
     struct ast_data_command_redirect *redirect;
 
-    struct ast *command = ast_create_command(false);
+    struct ast *command = ast_create_command();
 
     word = dupstr("ls");
     dynamic_array_append(command->data.command.words, &word);

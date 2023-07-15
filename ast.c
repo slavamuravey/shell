@@ -20,47 +20,47 @@ struct ast *ast_create_script()
     return ast;
 }
 
-struct ast *ast_create_command(bool async)
+struct ast *ast_create_command()
 {
     struct ast *ast;
     union ast_data data;
     data.command.words = dynamic_array_create(4, sizeof(char *));
     data.command.redirects = dynamic_array_create(4, sizeof(struct ast_data_command_redirect*));
-    data.command.async = async;
+    data.command.async = false;
     ast = ast_create(AST_TYPE_COMMAND, data);
 
     return ast;
 }
 
-struct ast *ast_create_pipeline(bool async)
+struct ast *ast_create_pipeline()
 {
     struct ast *ast;
     union ast_data data;
     data.pipeline.asts = dynamic_array_create(4, sizeof(struct ast*));
-    data.command.async = async;
+    data.command.async = false;
     ast = ast_create(AST_TYPE_PIPELINE, data);
 
     return ast;
 }
 
-struct ast *ast_create_logical_expression(enum ast_data_logical_expression_type type, struct ast *left, struct ast *right)
+struct ast *ast_create_logical_expression(enum ast_data_logical_expression_type type)
 {
     struct ast *ast;
     union ast_data data;
     data.logical_expression.type = type;
-    data.logical_expression.left = left;
-    data.logical_expression.right = right;
+    data.logical_expression.left = NULL;
+    data.logical_expression.right = NULL;
     ast = ast_create(AST_TYPE_LOGICAL_EXPRESSION, data);
 
     return ast;
 }
 
-struct ast *ast_create_subshell(bool async)
+struct ast *ast_create_subshell()
 {
     struct ast *ast;
     union ast_data data;
     data.subshell.script = ast_create_script();
-    data.command.async = async;
+    data.command.async = false;
     ast = ast_create(AST_TYPE_SUBSHELL, data);
 
     return ast;
@@ -137,6 +137,9 @@ static void ast_destroy_subshell(struct ast *ast)
 
 void ast_destroy(struct ast *ast)
 {
+    if (!ast) {
+        return;
+    }
     if (ast->type == AST_TYPE_SCRIPT) {
         ast_destroy_script(ast);
     } else if (ast->type == AST_TYPE_COMMAND) {
