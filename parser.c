@@ -12,7 +12,7 @@ static void parser_parse_command(struct parser *p, struct ast **command, char **
 static void parser_parse_subshell(struct parser *p, struct ast **subshell, char **error_msg);
 static void parser_parse_pipeline(struct parser *p, struct ast **expression, char **error_msg);
 static void parser_parse_expression(struct parser *p, struct ast **expression, char **error_msg);
-static void parser_parse_expression_separator(struct parser *p, struct ast *expression, char **error_msg);
+static void parser_parse_expression_separator(struct parser *p, struct ast **expression, char **error_msg);
 
 static struct parse_data *parse_data_create(struct ast *ast)
 {
@@ -64,19 +64,20 @@ static void parser_match_token(struct parser *p, enum token_type token_type, str
 
 static void parser_parse_command(struct parser *p, struct ast **command, char **error_msg)
 {
-    struct token *token = NULL;
+    struct token *word_token = NULL;
     char *word;
+    
     while (true) {
-        parser_match_token(p, TOKEN_TYPE_WORD, &token);
-        if (!token) {
-            return;
+        parser_match_token(p, TOKEN_TYPE_WORD, &word_token);
+        if (!word_token) {
+            break;
         }
 
         if (!*command) {
             *command = ast_create_command();
         }
 
-        word = dupstr(token->text);
+        word = dupstr(word_token->text);
         dynamic_array_append((*command)->data.command.words, &word);
     };
 }
@@ -120,7 +121,7 @@ static void parser_parse_subshell(struct parser *p, struct ast **subshell, char 
             return;
         }
 
-        parser_parse_expression_separator(p, expression, error_msg);
+        parser_parse_expression_separator(p, &expression, error_msg);
         if (*error_msg) {
             return;
         }
@@ -130,7 +131,8 @@ static void parser_parse_subshell(struct parser *p, struct ast **subshell, char 
 static void parser_parse_pipeline(struct parser *p, struct ast **expression, char **error_msg)
 {
     struct token *pipe_token;
-    struct ast *pipeline_expression = NULL;
+    struct ast *pipeline = NULL;
+
     while (true) {
         struct ast *subshell = NULL;
         parser_parse_subshell(p, &subshell, error_msg);
@@ -143,25 +145,25 @@ static void parser_parse_pipeline(struct parser *p, struct ast **expression, cha
         pipe_token = NULL;
         parser_match_token(p, TOKEN_TYPE_PIPE, &pipe_token);
         if (!pipe_token) {
-            if (!pipeline_expression) {
+            if (!pipeline) {
                 *expression = subshell;
             } else {
-                dynamic_array_append(pipeline_expression->data.pipeline.asts, &subshell);
+                dynamic_array_append(pipeline->data.pipeline.asts, &subshell);
 
                 if (!subshell) {
                     *error_msg = "unexpected pipeline right operand";
                 }
             }
 
-            return;
+            break;
         }
 
-        if (!pipeline_expression) {
-            pipeline_expression = ast_create_pipeline();
-            *expression = pipeline_expression;
+        if (!pipeline) {
+            pipeline = ast_create_pipeline();
+            *expression = pipeline;
         }
         
-        dynamic_array_append(pipeline_expression->data.pipeline.asts, &subshell);
+        dynamic_array_append(pipeline->data.pipeline.asts, &subshell);
 
         if (!subshell) {
             *error_msg = "unexpected pipeline left operand";
@@ -216,23 +218,30 @@ static void parser_parse_expression(struct parser *p, struct ast **expression, c
     }
 }
 
-static void parser_parse_expression_separator(struct parser *p, struct ast *expression, char **error_msg)
+static void parser_parse_expression_separator(struct parser *p, struct ast **expression, char **error_msg)
 {
     struct token *expression_separator_token = NULL;
-    if (!expression) {
+    if (!*expression) {
         parser_match_token(p, TOKEN_TYPE_EXPRESSION_SEPARATOR_2, &expression_separator_token);
         if (!expression_separator_token) {
             *error_msg = "unexpected token";
         }
     } else {
         parser_match_token(p, TOKEN_TYPE_EXPRESSION_SEPARATOR_1, &expression_separator_token);
+        if (expression_separator_token) {
+            return;
+        }
 
+        parser_match_token(p, TOKEN_TYPE_ASYNC, &expression_separator_token);
+        if (expression_separator_token) {
+            (*expression)->async = true;
+            
+            return;
+        }
+
+        parser_match_token(p, TOKEN_TYPE_EXPRESSION_SEPARATOR_2, &expression_separator_token);
         if (!expression_separator_token) {
-            parser_match_token(p, TOKEN_TYPE_EXPRESSION_SEPARATOR_2, &expression_separator_token);
-
-            if (!expression_separator_token) {
-                *error_msg = "expression separator token expected";
-            }
+            *error_msg = "expression separator token expected";
         }
     }    
 }
@@ -251,7 +260,7 @@ void parser_parse(struct parser *p, const struct dynamic_array *tokens, struct p
             break;
         }
 
-        parser_parse_expression_separator(p, expression, &error_msg);
+        parser_parse_expression_separator(p, &expression, &error_msg);
         if (error_msg) {
             break;
         }

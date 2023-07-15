@@ -6,6 +6,7 @@ static struct ast *ast_create(enum ast_type type, union ast_data data)
     struct ast *ast = malloc(sizeof(struct ast));
     ast->type = type;
     ast->data = data;
+    ast->async = false;
 
     return ast;
 }
@@ -26,7 +27,6 @@ struct ast *ast_create_command()
     union ast_data data;
     data.command.words = dynamic_array_create(4, sizeof(char *));
     data.command.redirects = dynamic_array_create(4, sizeof(struct ast_data_command_redirect*));
-    data.command.async = false;
     ast = ast_create(AST_TYPE_COMMAND, data);
 
     return ast;
@@ -37,7 +37,6 @@ struct ast *ast_create_pipeline()
     struct ast *ast;
     union ast_data data;
     data.pipeline.asts = dynamic_array_create(4, sizeof(struct ast*));
-    data.command.async = false;
     ast = ast_create(AST_TYPE_PIPELINE, data);
 
     return ast;
@@ -60,7 +59,6 @@ struct ast *ast_create_subshell()
     struct ast *ast;
     union ast_data data;
     data.subshell.script = NULL;
-    data.command.async = false;
     ast = ast_create(AST_TYPE_SUBSHELL, data);
 
     return ast;
@@ -140,16 +138,23 @@ void ast_destroy(struct ast *ast)
     if (!ast) {
         return;
     }
-    if (ast->type == AST_TYPE_SCRIPT) {
-        ast_destroy_script(ast);
-    } else if (ast->type == AST_TYPE_COMMAND) {
-        ast_destroy_command(ast);
-    } else if (ast->type == AST_TYPE_PIPELINE) {
-        ast_destroy_pipeline(ast);
-    } else if (ast->type == AST_TYPE_LOGICAL_EXPRESSION) {
-        ast_destroy_logical_expression(ast);
-    } else if (ast->type == AST_TYPE_SUBSHELL) {
-        ast_destroy_subshell(ast);
+
+    switch (ast->type) {
+        case AST_TYPE_SCRIPT:
+            ast_destroy_script(ast);
+            break;
+        case AST_TYPE_COMMAND:
+            ast_destroy_command(ast);
+            break;
+        case AST_TYPE_PIPELINE:
+            ast_destroy_pipeline(ast);
+            break;
+        case AST_TYPE_LOGICAL_EXPRESSION:
+            ast_destroy_logical_expression(ast);
+            break;
+        case AST_TYPE_SUBSHELL:
+            ast_destroy_subshell(ast);
+            break;
     }
 
     free(ast);

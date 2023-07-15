@@ -11,12 +11,10 @@ struct ast_data_script {
 struct ast_data_command {
     struct dynamic_array *words;
     struct dynamic_array *redirects;
-    bool async;
 };
 
 struct ast_data_pipeline {
     struct dynamic_array *asts;
-    bool async;
 };
 
 enum ast_data_command_redirect_type {
@@ -43,7 +41,6 @@ struct ast_data_logical_expression {
 
 struct ast_data_subshell {
     struct ast *script;
-    bool async;
 };
 
 union ast_data {
@@ -65,6 +62,7 @@ enum ast_type {
 struct ast {
     enum ast_type type;
     union ast_data data;
+    bool async;
 };
 
 struct ast *ast_create_script();
