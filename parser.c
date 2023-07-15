@@ -4,8 +4,6 @@
 #include "token.h"
 #include "utils.h"
 
-#define UNEXPECTED_TOKEN_STR(TOKEN) "unexpected token '"TOKEN"'"
-
 static struct parse_data *parse_data_create(struct ast *ast);
 static struct parse_error *parse_error_create(char *message);
 static void parser_reset(struct parser *p);
