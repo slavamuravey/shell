@@ -79,6 +79,11 @@ static void process_cmd(struct shell *s, struct token **tokens, size_t len)
     }
 
     cmd = shell_create_cmd(s, tokens, len);
+    if (!*cmd) {
+        free(cmd);
+        
+        return;
+    }
 
     pid = fork();
     if (pid == -1) {

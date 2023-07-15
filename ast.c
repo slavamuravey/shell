@@ -59,7 +59,7 @@ struct ast *ast_create_subshell()
 {
     struct ast *ast;
     union ast_data data;
-    data.subshell.script = ast_create_script();
+    data.subshell.script = NULL;
     data.command.async = false;
     ast = ast_create(AST_TYPE_SUBSHELL, data);
 

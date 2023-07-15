@@ -4,6 +4,18 @@
 #include "token.h"
 #include "utils.h"
 
+#define UNEXPECTED_TOKEN_STR(TOKEN) "unexpected token '"TOKEN"'"
+
+static struct parse_data *parse_data_create(struct ast *ast);
+static struct parse_error *parse_error_create(char *message);
+static void parser_reset(struct parser *p);
+static void parser_match_token(struct parser *p, enum token_type token_type, struct token **token);
+static void parser_parse_command(struct parser *p, struct ast **command, char **error_msg);
+static void parser_parse_subshell(struct parser *p, struct ast **subshell, char **error_msg);
+static void parser_parse_pipeline(struct parser *p, struct ast **expression, char **error_msg);
+static void parser_parse_expression(struct parser *p, struct ast **expression, char **error_msg);
+static void parser_parse_expression_separator(struct parser *p, struct ast *expression, char **error_msg);
+
 static struct parse_data *parse_data_create(struct ast *ast)
 {
     struct parse_data *data = malloc(sizeof(struct parse_data));
@@ -55,25 +67,65 @@ static void parser_match_token(struct parser *p, enum token_type token_type, str
 static void parser_parse_command(struct parser *p, struct ast **command, char **error_msg)
 {
     struct token *token = NULL;
-    do {
+    char *word;
+    while (true) {
         parser_match_token(p, TOKEN_TYPE_WORD, &token);
-        if (token) {
-            char *word;
-            if (!*command) {
-                *command = ast_create_command();
-            }
-
-            word = dupstr(token->text);
-            dynamic_array_append((*command)->data.command.words, &word);
+        if (!token) {
+            return;
         }
-    } while (token);
+
+        if (!*command) {
+            *command = ast_create_command();
+        }
+
+        word = dupstr(token->text);
+        dynamic_array_append((*command)->data.command.words, &word);
+    };
 }
 
-static void parser_parse_subshell(struct parser *p, struct ast **expression, char **error_msg)
+static void parser_parse_subshell(struct parser *p, struct ast **subshell, char **error_msg)
 {
-    parser_parse_command(p, expression, error_msg);
-    if (*error_msg) {
+    struct token *subshell_start_token;
+    struct token *subshell_end_token;
+    struct dynamic_array *expressions_array;
+    struct ast *script;
+
+    subshell_start_token = NULL;
+    subshell_end_token = NULL;
+
+    parser_match_token(p, TOKEN_TYPE_SUBSHELL_START, &subshell_start_token);
+    if (!subshell_start_token) {
+        parser_parse_command(p, subshell, error_msg);
+
         return;
+    }
+
+    *subshell = ast_create_subshell();
+    script = ast_create_script();
+    (*subshell)->data.subshell.script = script;
+    expressions_array = script->data.script.expressions;
+
+    while (true) {
+        struct ast *expression = NULL;
+        parser_parse_expression(p, &expression, error_msg);
+        dynamic_array_append(expressions_array, &expression);
+        if (*error_msg) {
+            return;
+        }
+
+        parser_match_token(p, TOKEN_TYPE_SUBSHELL_END, &subshell_end_token);
+        if (subshell_end_token) {
+            if (!expression && expressions_array->len == 1) {
+                *error_msg = "unexpected token";
+            }
+            
+            return;
+        }
+
+        parser_parse_expression_separator(p, expression, error_msg);
+        if (*error_msg) {
+            return;
+        }
     }
 }
 
@@ -85,6 +137,8 @@ static void parser_parse_pipeline(struct parser *p, struct ast **expression, cha
         struct ast *subshell = NULL;
         parser_parse_subshell(p, &subshell, error_msg);
         if (*error_msg) {
+            *expression = subshell;
+            
             return;
         }
 

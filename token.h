@@ -4,6 +4,18 @@
 #include <stdbool.h>
 #include "dynamic_array.h"
 
+#define TOKEN_TEXT_AMP "&"
+#define TOKEN_TEXT_AMP_2 "&&"
+#define TOKEN_TEXT_PIPE "|"
+#define TOKEN_TEXT_PIPE_2 "||"
+#define TOKEN_TEXT_OPENING_TRIANGLE_BRACKET "<"
+#define TOKEN_TEXT_CLOSING_TRIANGLE_BRACKET ">"
+#define TOKEN_TEXT_CLOSING_TRIANGLE_BRACKET_2 ">>"
+#define TOKEN_TEXT_OPENING_PARENTHESIS "("
+#define TOKEN_TEXT_CLOSING_PARENTHESIS ")"
+#define TOKEN_TEXT_SEMICOLON ";"
+#define TOKEN_TEXT_EOL "\n"
+
 enum token_type {
     TOKEN_TYPE_WORD,
     TOKEN_TYPE_ASYNC,
