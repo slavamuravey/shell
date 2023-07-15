@@ -69,19 +69,64 @@ static void parser_parse_command(struct parser *p, struct ast **command, char **
     } while (token);
 }
 
-static void parser_parse_expression(struct parser *p, struct ast **expression, char **error_msg)
+static void parser_parse_subshell(struct parser *p, struct ast **expression, char **error_msg)
 {
-    struct ast *expression_command = NULL;
-    struct token *logical_expression_token;
-    struct ast *expression_left;
-    struct ast *expression_right;
-    parser_parse_command(p, &expression_command, error_msg);
+    parser_parse_command(p, expression, error_msg);
     if (*error_msg) {
         return;
     }
+}
 
-    if (expression_command) {
-        *expression = expression_command;
+static void parser_parse_pipeline(struct parser *p, struct ast **expression, char **error_msg)
+{
+    struct token *pipe_token;
+    struct ast *pipeline_expression = NULL;
+    while (true) {
+        struct ast *subshell = NULL;
+        parser_parse_subshell(p, &subshell, error_msg);
+        if (*error_msg) {
+            return;
+        }
+
+        pipe_token = NULL;
+        parser_match_token(p, TOKEN_TYPE_PIPE, &pipe_token);
+        if (!pipe_token) {
+            if (!pipeline_expression) {
+                *expression = subshell;
+            } else {
+                dynamic_array_append(pipeline_expression->data.pipeline.asts, &subshell);
+
+                if (!subshell) {
+                    *error_msg = "unexpected pipeline right operand";
+                }
+            }
+
+            return;
+        }
+
+        if (!pipeline_expression) {
+            pipeline_expression = ast_create_pipeline();
+            *expression = pipeline_expression;
+        }
+        
+        dynamic_array_append(pipeline_expression->data.pipeline.asts, &subshell);
+
+        if (!subshell) {
+            *error_msg = "unexpected pipeline left operand";
+
+            return;
+        }
+    }
+}
+
+static void parser_parse_expression(struct parser *p, struct ast **expression, char **error_msg)
+{
+    struct token *logical_expression_token;
+    struct ast *expression_left;
+    struct ast *expression_right;
+    parser_parse_pipeline(p, expression, error_msg);
+    if (*error_msg) {
+        return;
     }
 
     logical_expression_token = NULL;
@@ -99,7 +144,8 @@ static void parser_parse_expression(struct parser *p, struct ast **expression, c
     (*expression)->data.logical_expression.left = expression_left;
     
     if (!expression_left) {
-        *error_msg = "left operand of logical expression expected";
+        *error_msg = "unexpected logical expression left operand";
+
         return;
     }
 
@@ -112,7 +158,8 @@ static void parser_parse_expression(struct parser *p, struct ast **expression, c
     }
 
     if (!expression_right) {
-        *error_msg = "right operand of logical expression expected";
+        *error_msg = "unexpected logical expression right operand";
+
         return;
     }
 }
@@ -122,6 +169,9 @@ static void parser_parse_expression_separator(struct parser *p, struct ast *expr
     struct token *expression_separator_token = NULL;
     if (!expression) {
         parser_match_token(p, TOKEN_TYPE_EXPRESSION_SEPARATOR_2, &expression_separator_token);
+        if (!expression_separator_token) {
+            *error_msg = "unexpected token";
+        }
     } else {
         parser_match_token(p, TOKEN_TYPE_EXPRESSION_SEPARATOR_1, &expression_separator_token);
 
@@ -130,15 +180,9 @@ static void parser_parse_expression_separator(struct parser *p, struct ast *expr
 
             if (!expression_separator_token) {
                 *error_msg = "expression separator token expected";
-
-                return;
             }
         }
-    }
-
-    if (!expression_separator_token) {
-        *error_msg = "unexpected token";
-    }
+    }    
 }
 
 void parser_parse(struct parser *p, const struct dynamic_array *tokens, struct parse_data **data, struct parse_error **error)
