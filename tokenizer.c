@@ -4,6 +4,7 @@
 #include "tokenizer.h"
 #include "utils.h"
 #include "token.h"
+#include "dynamic_array.h"
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 

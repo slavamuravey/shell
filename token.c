@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "token.h"
+#include "dynamic_array.h"
 
 struct token *token_create(enum token_type type, char *text)
 {

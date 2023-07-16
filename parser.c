@@ -3,6 +3,8 @@
 #include "parser.h"
 #include "token.h"
 #include "utils.h"
+#include "dynamic_array.h"
+#include "ast.h"
 
 static struct parse_data *parse_data_create(struct ast *ast);
 static struct parse_error *parse_error_create(char *message);

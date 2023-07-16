@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "dynamic_array.h"
 #include "ast.h"
 
 static struct ast *ast_create(enum ast_type type, union ast_data data)

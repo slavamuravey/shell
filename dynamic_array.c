@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "dynamic_array.h"
+#include <unistd.h>
 
 struct dynamic_array *dynamic_array_create(size_t cap, size_t width)
 {

@@ -6,6 +6,8 @@
 #include "shell.h"
 #include "utils.h"
 #include "token.h"
+#include "tokenizer.h"
+#include "parser.h"
 
 struct shell *shell_create(struct tokenizer *t, struct parser *p)
 {
