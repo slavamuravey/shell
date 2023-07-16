@@ -6,13 +6,6 @@
 #include "dynamic_array.h"
 #include "ast.h"
 
-static struct parse_data *parse_data_create(struct ast *ast);
-static struct parse_error *parse_error_create(char *message);
-static void parser_reset(struct parser *p);
-static void parser_match_token(struct parser *p, enum token_type token_type, struct token **token);
-static void parser_parse_command(struct parser *p, struct ast **command, char **error_msg);
-static void parser_parse_subshell(struct parser *p, struct ast **subshell, char **error_msg);
-static void parser_parse_pipeline(struct parser *p, struct ast **expression, char **error_msg);
 static void parser_parse_expression(struct parser *p, struct ast **expression, char **error_msg);
 static void parser_parse_expression_separator(struct parser *p, struct ast **expression, char **error_msg);
 
