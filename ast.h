@@ -17,14 +17,14 @@ struct ast_data_pipeline {
     struct dynamic_array *asts;
 };
 
-enum ast_data_command_redirect_type {
-    AST_DATA_COMMAND_REDIRECT_TYPE_INPUT,
-    AST_DATA_COMMAND_REDIRECT_TYPE_OUTPUT,
-    AST_DATA_COMMAND_REDIRECT_TYPE_OUTPUT_APPEND
+enum ast_data_expression_redirect_type {
+    AST_DATA_EXPRESSION_REDIRECT_TYPE_INPUT,
+    AST_DATA_EXPRESSION_REDIRECT_TYPE_OUTPUT,
+    AST_DATA_EXPRESSION_REDIRECT_TYPE_OUTPUT_APPEND
 };
 
-struct ast_data_command_redirect {
-    enum ast_data_command_redirect_type type;
+struct ast_data_expression_redirect {
+    enum ast_data_expression_redirect_type type;
     char *file;
 };
 
@@ -41,6 +41,7 @@ struct ast_data_logical_expression {
 
 struct ast_data_subshell {
     struct ast *script;
+    struct dynamic_array *redirects;
 };
 
 union ast_data {
@@ -70,7 +71,7 @@ struct ast *ast_create_command();
 struct ast *ast_create_pipeline();
 struct ast *ast_create_logical_expression(enum ast_data_logical_expression_type type);
 struct ast *ast_create_subshell();
-struct ast_data_command_redirect *ast_data_command_redirect_create(enum ast_data_command_redirect_type type, char *file);
+struct ast_data_expression_redirect *ast_data_expression_redirect_create(enum ast_data_expression_redirect_type type, char *file);
 void ast_destroy(struct ast *ast);
 
 #endif

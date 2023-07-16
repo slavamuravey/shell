@@ -26,7 +26,7 @@ struct ast *ast_create_command()
     struct ast *ast;
     union ast_data data;
     data.command.words = dynamic_array_create(4, sizeof(char *));
-    data.command.redirects = dynamic_array_create(4, sizeof(struct ast_data_command_redirect*));
+    data.command.redirects = dynamic_array_create(4, sizeof(struct ast_data_expression_redirect*));
     ast = ast_create(AST_TYPE_COMMAND, data);
 
     return ast;
@@ -59,14 +59,15 @@ struct ast *ast_create_subshell()
     struct ast *ast;
     union ast_data data;
     data.subshell.script = NULL;
+    data.subshell.redirects = dynamic_array_create(4, sizeof(struct ast_data_expression_redirect*));
     ast = ast_create(AST_TYPE_SUBSHELL, data);
 
     return ast;
 }
 
-struct ast_data_command_redirect *ast_data_command_redirect_create(enum ast_data_command_redirect_type type, char *file)
+struct ast_data_expression_redirect *ast_data_expression_redirect_create(enum ast_data_expression_redirect_type type, char *file)
 {
-    struct ast_data_command_redirect *redirect = malloc(sizeof(struct ast_data_command_redirect));
+    struct ast_data_expression_redirect *redirect = malloc(sizeof(struct ast_data_expression_redirect));
     redirect->type = type;
     redirect->file = file;
 
@@ -85,7 +86,7 @@ static void ast_destroy_script(struct ast *ast)
     free(expressions_array);
 }
 
-static void ast_data_command_redirect_destroy(struct ast_data_command_redirect *redirect)
+static void ast_data_expression_redirect_destroy(struct ast_data_expression_redirect *redirect)
 {
     free(redirect->file);
     free(redirect);
@@ -97,12 +98,12 @@ static void ast_destroy_command(struct ast *ast)
     struct dynamic_array *words_array = ast->data.command.words;
     struct dynamic_array *redirects_array = ast->data.command.redirects;
     char **words = words_array->ptr;
-    struct ast_data_command_redirect **redirects = redirects_array->ptr;
+    struct ast_data_expression_redirect **redirects = redirects_array->ptr;
     for (i = 0; i < words_array->len; i++) {
         free(words[i]);
     }
     for (i = 0; i < redirects_array->len; i++) {
-        ast_data_command_redirect_destroy(redirects[i]);
+        ast_data_expression_redirect_destroy(redirects[i]);
     }
     free(words);
     free(words_array);
@@ -130,6 +131,14 @@ static void ast_destroy_logical_expression(struct ast *ast)
 
 static void ast_destroy_subshell(struct ast *ast)
 {
+    int i;
+    struct dynamic_array *redirects_array = ast->data.subshell.redirects;
+    struct ast_data_expression_redirect **redirects = redirects_array->ptr;
+    for (i = 0; i < redirects_array->len; i++) {
+        ast_data_expression_redirect_destroy(redirects[i]);
+    }
+    free(redirects);
+    free(redirects_array);
     ast_destroy(ast->data.subshell.script);
 }
 

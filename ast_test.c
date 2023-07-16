@@ -80,9 +80,9 @@ void test_ast_pipeline_creation()
 void test_ast_command_creation()
 {
     char *word;
-    struct ast_data_command_redirect **command_redirects;
-    struct ast_data_command_redirect *command_redirect;
-    struct ast_data_command_redirect *redirect;
+    struct ast_data_expression_redirect **command_redirects;
+    struct ast_data_expression_redirect *command_redirect;
+    struct ast_data_expression_redirect *redirect;
 
     struct ast *command = ast_create_command();
 
@@ -91,7 +91,7 @@ void test_ast_command_creation()
     word = dupstr("-al");
     dynamic_array_append(command->data.command.words, &word);
 
-    redirect = ast_data_command_redirect_create(AST_DATA_COMMAND_REDIRECT_TYPE_INPUT, dupstr("file.txt"));
+    redirect = ast_data_expression_redirect_create(AST_DATA_EXPRESSION_REDIRECT_TYPE_INPUT, dupstr("file.txt"));
 
     dynamic_array_append(command->data.command.redirects, &redirect);
 

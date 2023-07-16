@@ -62,6 +62,83 @@ static void parser_match_token(struct parser *p, enum token_type token_type, str
     }
 }
 
+static void parser_append_expression_redirect(struct parser *p, struct ast **expression, struct ast_data_expression_redirect *redirect)
+{
+    switch ((*expression)->type) {
+        case AST_TYPE_COMMAND: 
+            dynamic_array_append((*expression)->data.command.redirects, &redirect);
+            break;
+        case AST_TYPE_SUBSHELL: 
+            dynamic_array_append((*expression)->data.subshell.redirects, &redirect);
+            break;
+        default:
+            break;
+    }
+}
+
+static void parser_parse_redirects_input(struct parser *p, struct ast **expression, char **error_msg)
+{
+    struct token *redirect_input_token = NULL;
+    struct token *word_token = NULL;
+    struct ast_data_expression_redirect *redirect;
+
+    parser_match_token(p, TOKEN_TYPE_REDIRECT_INPUT, &redirect_input_token);
+    if (!redirect_input_token) {
+        return;
+    }
+
+    parser_match_token(p, TOKEN_TYPE_WORD, &word_token);
+    if (!word_token) {
+        *error_msg = "unexpected redirect operand";
+
+        return;
+    }
+
+    redirect = ast_data_expression_redirect_create(AST_DATA_EXPRESSION_REDIRECT_TYPE_INPUT, dupstr(word_token->text));
+    parser_append_expression_redirect(p, expression, redirect);
+}
+
+static void parser_parse_redirects_output(struct parser *p, struct ast **expression, char **error_msg)
+{
+    struct token *redirect_output_token = NULL;
+    struct token *word_token = NULL;
+    struct ast_data_expression_redirect *redirect;
+    enum ast_data_expression_redirect_type redirect_type = AST_DATA_EXPRESSION_REDIRECT_TYPE_OUTPUT;
+
+    parser_match_token(p, TOKEN_TYPE_REDIRECT_OUTPUT, &redirect_output_token);
+    if (!redirect_output_token) {
+        parser_match_token(p, TOKEN_TYPE_REDIRECT_OUTPUT_APPEND, &redirect_output_token);
+        if (!redirect_output_token) {
+            return;
+        }
+        redirect_type = AST_DATA_EXPRESSION_REDIRECT_TYPE_OUTPUT_APPEND;
+    }
+
+    parser_match_token(p, TOKEN_TYPE_WORD, &word_token);
+    if (!word_token) {
+        *error_msg = "unexpected redirect operand";
+
+        return;
+    }
+
+    redirect = ast_data_expression_redirect_create(redirect_type, dupstr(word_token->text));
+    parser_append_expression_redirect(p, expression, redirect);
+}
+
+static void parser_parse_redirects(struct parser *p, struct ast **expression, char **error_msg)
+{
+    int pos = p->pos;
+    parser_parse_redirects_input(p, expression, error_msg);
+    if (p->pos != pos) {
+        parser_parse_redirects_output(p, expression, error_msg);
+
+        return;
+    }
+    
+    parser_parse_redirects_output(p, expression, error_msg);
+    parser_parse_redirects_input(p, expression, error_msg);
+}
+
 static void parser_parse_command(struct parser *p, struct ast **command, char **error_msg)
 {
     struct token *word_token = NULL;
@@ -80,6 +157,8 @@ static void parser_parse_command(struct parser *p, struct ast **command, char **
         word = dupstr(word_token->text);
         dynamic_array_append((*command)->data.command.words, &word);
     };
+
+    parser_parse_redirects(p, command, error_msg);
 }
 
 static void parser_parse_subshell(struct parser *p, struct ast **subshell, char **error_msg)
@@ -116,9 +195,11 @@ static void parser_parse_subshell(struct parser *p, struct ast **subshell, char 
         if (subshell_end_token) {
             if (!expression && expressions_array->len == 1) {
                 *error_msg = "unexpected token";
+
+                return;
             }
             
-            return;
+            break;
         }
 
         parser_parse_expression_separator(p, &expression, error_msg);
@@ -126,6 +207,8 @@ static void parser_parse_subshell(struct parser *p, struct ast **subshell, char 
             return;
         }
     }
+
+    parser_parse_redirects(p, subshell, error_msg);
 }
 
 static void parser_parse_pipeline(struct parser *p, struct ast **expression, char **error_msg)
