@@ -231,7 +231,7 @@ static void parser_parse_pipeline(struct parser *p, struct ast **expression, cha
             if (!pipeline) {
                 *expression = subshell;
             } else {
-                dynamic_array_append(pipeline->data.pipeline.asts, &subshell);
+                dynamic_array_append(pipeline->data.pipeline.expressions, &subshell);
 
                 if (!subshell) {
                     *error_msg = "unexpected pipeline right operand";
@@ -246,7 +246,7 @@ static void parser_parse_pipeline(struct parser *p, struct ast **expression, cha
             *expression = pipeline;
         }
         
-        dynamic_array_append(pipeline->data.pipeline.asts, &subshell);
+        dynamic_array_append(pipeline->data.pipeline.expressions, &subshell);
 
         if (!subshell) {
             *error_msg = "unexpected pipeline left operand";

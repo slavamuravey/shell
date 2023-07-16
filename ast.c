@@ -36,7 +36,7 @@ struct ast *ast_create_pipeline()
 {
     struct ast *ast;
     union ast_data data;
-    data.pipeline.asts = dynamic_array_create(4, sizeof(struct ast*));
+    data.pipeline.expressions = dynamic_array_create(4, sizeof(struct ast*));
     ast = ast_create(AST_TYPE_PIPELINE, data);
 
     return ast;
@@ -113,14 +113,14 @@ static void ast_destroy_command(struct ast *ast)
 
 static void ast_destroy_pipeline(struct ast *ast)
 {
-    struct dynamic_array *asts_array = ast->data.pipeline.asts;
+    struct dynamic_array *expressions_array = ast->data.pipeline.expressions;
     int i;
-    struct ast **asts = asts_array->ptr;
-    for (i = 0; i < asts_array->len; i++) {
-        ast_destroy(asts[i]);
+    struct ast **expressions = expressions_array->ptr;
+    for (i = 0; i < expressions_array->len; i++) {
+        ast_destroy(expressions[i]);
     }
-    free(asts);
-    free(asts_array);
+    free(expressions);
+    free(expressions_array);
 }
 
 static void ast_destroy_logical_expression(struct ast *ast)

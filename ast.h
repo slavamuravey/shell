@@ -14,7 +14,7 @@ struct ast_data_command {
 };
 
 struct ast_data_pipeline {
-    struct dynamic_array *asts;
+    struct dynamic_array *expressions;
 };
 
 enum ast_data_expression_redirect_type {

@@ -43,7 +43,7 @@ void test_ast_script_creation()
 void test_ast_pipeline_creation()
 {
     struct ast *pipeline = ast_create_pipeline();
-    struct ast **pipeline_asts;
+    struct ast **pipeline_expressions;
     struct ast *ast1;
     struct ast *ast2;
     char **words1;
@@ -63,12 +63,12 @@ void test_ast_pipeline_creation()
     word = dupstr("axu");
     dynamic_array_append(cmd2->data.command.words, &word);
 
-    dynamic_array_append(pipeline->data.pipeline.asts, &cmd1);
-    dynamic_array_append(pipeline->data.pipeline.asts, &cmd2);
+    dynamic_array_append(pipeline->data.pipeline.expressions, &cmd1);
+    dynamic_array_append(pipeline->data.pipeline.expressions, &cmd2);
     
-    pipeline_asts = pipeline->data.pipeline.asts->ptr;
-    ast1 = pipeline_asts[0];
-    ast2 = pipeline_asts[1];
+    pipeline_expressions = pipeline->data.pipeline.expressions->ptr;
+    ast1 = pipeline_expressions[0];
+    ast2 = pipeline_expressions[1];
 
     words1 = ast1->data.command.words->ptr;
     words2 = ast2->data.command.words->ptr;
