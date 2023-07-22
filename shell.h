@@ -7,9 +7,10 @@
 struct shell {
     struct tokenizer *t;
     struct parser *p;
+    struct vm *vm;
 };
 
-struct shell *shell_create(struct tokenizer *t, struct parser *p);
+struct shell *shell_create();
 void shell_run(struct shell *s);
 void shell_destroy(struct shell *s);
 

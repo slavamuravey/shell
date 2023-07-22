@@ -8,12 +8,17 @@
 #include "token.h"
 #include "tokenizer.h"
 #include "parser.h"
+#include "vm.h"
 
-struct shell *shell_create(struct tokenizer *t, struct parser *p)
+struct shell *shell_create()
 {
     struct shell *s = malloc(sizeof(struct shell));
+    struct tokenizer *t = tokenizer_create();
+    struct parser *p = parser_create();
+    struct vm *vm = vm_create();
     s->t = t;
     s->p = p;
+    s->vm = vm;
 
     return s;
 }
@@ -28,100 +33,6 @@ static void shell_print_input_prompt(struct shell *s)
     if (isrepl()) {
         printf("> ");
         fflush(stdout);
-    }
-}
-
-static char **shell_create_cmd(struct shell *s, struct token **tokens, size_t len)
-{
-    char **array;
-    int i;
-
-    array = malloc((len + 1) * sizeof(char*));
-    
-    for (i = 0; i < len; i++) {
-        struct token *token = tokens[i];
-        if (token->type != TOKEN_TYPE_WORD) {
-            break;
-        }
-        array[i] = token->text;
-    }
-
-    array[i] = NULL;
-
-    return array;
-}
-
-static void process_cmd(struct shell *s, struct token **tokens, size_t len)
-{
-    pid_t pid;
-    char **cmd;
-
-    if (len == 0) {     
-        return;
-    }
-
-    if (!strcmp(tokens[0]->text, "cd")) {
-        char *dir;
-        if (len > 1 && tokens[1]->type != TOKEN_TYPE_EXPRESSION_SEPARATOR_2) {
-            dir = tokens[1]->text;
-        } else {
-            char *home_dir = getenv("HOME");
-            if (!home_dir) {
-                printf("I don't know where is your home.\n");
-                return;
-            }
-            dir = home_dir;
-        }
-
-        if (chdir(dir) == -1) {
-            perror(dir);
-        }
-
-        return;
-    }
-
-    cmd = shell_create_cmd(s, tokens, len);
-    if (!*cmd) {
-        free(cmd);
-        
-        return;
-    }
-
-    pid = fork();
-    if (pid == -1) {
-        perror("fork");
-        exit(1);
-    }
-
-    if (pid == 0) {
-        execvp(*cmd, cmd);
-        perror(*cmd);
-        exit(1);
-    }
-
-    free(cmd);
-
-    wait(NULL);
-}
-
-static void shell_exec_parse(struct shell *s, struct dynamic_array *tokens)
-{
-    struct token **tokens_ptr_base;
-    struct token **tokens_ptr;
-    int i;
-
-    if (tokens->len == 0) {
-        return;
-    }
-
-    tokens_ptr_base = tokens->ptr;
-    tokens_ptr = tokens->ptr;
-    for (i = 0; i < tokens->len; i++) {
-        if ((*tokens_ptr)->type == TOKEN_TYPE_EXPRESSION_SEPARATOR_2) {
-            process_cmd(s, tokens_ptr_base, tokens_ptr - tokens_ptr_base);
-            tokens_ptr_base = tokens_ptr + 1;
-        }
-        tokens_ptr++;
     }
 }
 
@@ -165,10 +76,7 @@ static void shell_exec(struct shell *s, const char *str)
     free(p_data);
     free(p_error);
 
-    /*
-    * TODO: Replace to VM execution
-    */
-    shell_exec_parse(s, tokens);
+    vm_run(s->vm, ast);
 
     tokens_destroy(tokens);
     ast_destroy(ast);
@@ -207,5 +115,8 @@ void shell_run(struct shell *s)
 
 void shell_destroy(struct shell *s)
 {
+    tokenizer_destroy(s->t);
+    parser_destroy(s->p);
+    vm_destroy(s->vm);
     free(s);
 }
