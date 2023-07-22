@@ -28,6 +28,7 @@
         "compare": "c",
         "utility": "c",
         "system_error": "c",
-        "strings.h": "c"
+        "strings.h": "c",
+        "vm.h": "c"
     }
 }

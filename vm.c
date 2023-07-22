@@ -1,44 +1,50 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/wait.h>
 #include "vm.h"
+#include "dynamic_array.h"
+#include "ast.h"
 
-/* static char **shell_create_cmd(struct shell *s, struct token **tokens, size_t len)
+struct vm *vm_create()
 {
-    char **array;
-    int i;
+    struct vm *vm = malloc(sizeof(struct vm));
 
-    array = malloc((len + 1) * sizeof(char*));
-    
-    for (i = 0; i < len; i++) {
-        struct token *token = tokens[i];
-        if (token->type != TOKEN_TYPE_WORD) {
-            break;
-        }
-        array[i] = token->text;
-    }
-
-    array[i] = NULL;
-
-    return array;
+    return vm;
 }
 
-static void process_cmd(struct shell *s, struct token **tokens, size_t len)
+static void vm_run_script(struct vm *vm, struct ast *ast)
+{
+    int i;
+    struct dynamic_array *expressions_array = ast->data.script.expressions;
+    struct ast **expressions = expressions_array->ptr;
+
+    for (i = 0; i < expressions_array->len; i++) {
+        vm_run(vm, expressions[i]);
+    }
+}
+
+static void vm_run_command(struct vm *vm, struct ast *ast)
 {
     pid_t pid;
     char **cmd;
+    struct dynamic_array *words_array = ast->data.command.words;
+    char **words = words_array->ptr;
+    size_t words_len = words_array->len;
 
-    if (len == 0) {     
+    if (words_len == 0) {     
         return;
     }
 
-    if (!strcmp(tokens[0]->text, "cd")) {
+    if (!strcmp(words[0], "cd")) {
         char *dir;
-        if (len > 1 && tokens[1]->type != TOKEN_TYPE_EXPRESSION_SEPARATOR_2) {
-            dir = tokens[1]->text;
+        if (words_len > 1) {
+            dir = words[1];
         } else {
             char *home_dir = getenv("HOME");
             if (!home_dir) {
                 printf("I don't know where is your home.\n");
+                
                 return;
             }
             dir = home_dir;
@@ -51,12 +57,10 @@ static void process_cmd(struct shell *s, struct token **tokens, size_t len)
         return;
     }
 
-    cmd = shell_create_cmd(s, tokens, len);
-    if (!*cmd) {
-        free(cmd);
-        
-        return;
-    }
+    size_t size = sizeof(char*);
+    cmd = malloc(size * (words_len + 1));
+    memcpy(cmd, words, words_len * size);
+    cmd[words_len] = NULL;
 
     pid = fork();
     if (pid == -1) {
@@ -75,37 +79,44 @@ static void process_cmd(struct shell *s, struct token **tokens, size_t len)
     wait(NULL);
 }
 
-static void shell_exec_parse(struct shell *s, struct dynamic_array *tokens)
+static void vm_run_pipeline(struct vm *vm, struct ast *ast)
 {
-    struct token **tokens_ptr_base;
-    struct token **tokens_ptr;
-    int i;
 
-    if (tokens->len == 0) {
-        return;
-    }
+}
 
-    tokens_ptr_base = tokens->ptr;
-    tokens_ptr = tokens->ptr;
-    for (i = 0; i < tokens->len; i++) {
-        if ((*tokens_ptr)->type == TOKEN_TYPE_EXPRESSION_SEPARATOR_2) {
-            process_cmd(s, tokens_ptr_base, tokens_ptr - tokens_ptr_base);
-            tokens_ptr_base = tokens_ptr + 1;
-        }
-        tokens_ptr++;
-    }
-} */
-
-struct vm *vm_create()
+static void vm_run_logical_expression(struct vm *vm, struct ast *ast)
 {
-    struct vm *vm = malloc(sizeof(struct vm));
 
-    return vm;
+}
+
+static void vm_run_subshell(struct vm *vm, struct ast *ast)
+{
+
 }
 
 void vm_run(struct vm *vm, struct ast *ast)
 {
-    printf("vm run\n");
+    if (!ast) {
+        return;
+    }
+
+    switch (ast->type) {
+        case AST_TYPE_SCRIPT:
+            vm_run_script(vm, ast);
+            break;
+        case AST_TYPE_COMMAND:
+            vm_run_command(vm, ast);
+            break;
+        case AST_TYPE_PIPELINE:
+            vm_run_pipeline(vm, ast);
+            break;
+        case AST_TYPE_LOGICAL_EXPRESSION:
+            vm_run_logical_expression(vm, ast);
+            break;
+        case AST_TYPE_SUBSHELL:
+            vm_run_subshell(vm, ast);
+            break;
+    }
 }
 
 void vm_destroy(struct vm *vm)
