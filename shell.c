@@ -90,19 +90,13 @@ void shell_run(struct shell *s)
     shell_print_input_prompt(s);
     while ((c = getchar()) != EOF) {
         dynamic_array_append(chars, &c);
-        if (c == '\n' && isrepl()) {
+        if (c == '\n') {
             char *str = create_string_from_array(chars->ptr, chars->len);
             shell_exec(s, str);
             chars->len = 0;
             free(str);
             shell_print_input_prompt(s);
         }
-    }
-
-    if (!isrepl()) {
-        char *str = create_string_from_array(chars->ptr, chars->len);
-        shell_exec(s, str);
-        free(str);
     }
 
     free(chars->ptr);
