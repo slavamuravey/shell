@@ -254,6 +254,7 @@ static void parser_parse_pipeline(struct parser *p, struct ast **expression, cha
 static void parser_parse_expression(struct parser *p, struct ast **expression, char **error_msg)
 {
     struct token *logical_expression_token;
+    enum ast_data_logical_expression_type type;
     struct ast *expression_left;
     struct ast *expression_right;
     parser_parse_pipeline(p, expression, error_msg);
@@ -272,7 +273,10 @@ static void parser_parse_expression(struct parser *p, struct ast **expression, c
 
     expression_left = *expression;
 
-    *expression = ast_create_logical_expression(logical_expression_token->type);
+    type = logical_expression_token->type == TOKEN_TYPE_AND ? 
+        AST_DATA_LOGICAL_EXPRESSION_TYPE_AND : 
+        AST_DATA_LOGICAL_EXPRESSION_TYPE_OR;
+    *expression = ast_create_logical_expression(type);
     (*expression)->data.logical_expression.left = expression_left;
     
     if (!expression_left) {

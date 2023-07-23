@@ -7,7 +7,7 @@ struct vm {
 };
 
 struct vm *vm_create();
-void vm_run(struct vm *vm, struct ast *ast);
+int vm_run(struct vm *vm, struct ast *ast);
 void vm_destroy(struct vm *vm);
 
 #endif
