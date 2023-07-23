@@ -88,7 +88,19 @@ void shell_run(struct shell *s)
     struct dynamic_array *chars = dynamic_array_create(4, sizeof(char));
 
     shell_print_input_prompt(s);
-    while ((c = getchar()) != EOF) {
+    while (true) {
+        int save_errno = errno;
+        c = getchar();
+        if (c == EOF) {
+            if (errno == EINTR) {
+                errno = save_errno;
+
+                continue;
+            }
+
+            break;
+        }
+
         dynamic_array_append(chars, &c);
         if (c == '\n') {
             char *str = create_string_from_array(chars->ptr, chars->len);

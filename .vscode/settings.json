@@ -29,6 +29,8 @@
         "utility": "c",
         "system_error": "c",
         "strings.h": "c",
-        "vm.h": "c"
+        "vm.h": "c",
+        "cerrno": "c",
+        "signal.h": "c"
     }
 }
