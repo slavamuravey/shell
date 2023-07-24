@@ -226,6 +226,7 @@ static void parser_parse_pipeline(struct parser *p, struct ast **expression, cha
             if (!pipeline) {
                 *expression = subshell;
             } else {
+                subshell->async = true;
                 dynamic_array_append(pipeline->data.pipeline.expressions, &subshell);
 
                 if (!subshell) {
@@ -241,6 +242,7 @@ static void parser_parse_pipeline(struct parser *p, struct ast **expression, cha
             *expression = pipeline;
         }
         
+        subshell->async = true;
         dynamic_array_append(pipeline->data.pipeline.expressions, &subshell);
 
         if (!subshell) {
