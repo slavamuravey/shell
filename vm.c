@@ -45,15 +45,18 @@ struct vm *vm_create()
     return vm;
 }
 
-static void vm_run_script(struct vm *vm, struct ast *ast)
+static int vm_run_script(struct vm *vm, struct ast *ast)
 {
     int i;
     struct dynamic_array *expressions_array = ast->data.script.expressions;
     struct ast **expressions = expressions_array->ptr;
+    int status = 0;
 
     for (i = 0; i < expressions_array->len; i++) {
-        vm_run(vm, expressions[i]);
+        status = vm_run(vm, expressions[i]);
     }
+
+    return status;
 }
 
 static void vm_run_command(struct vm *vm, struct ast *ast, pid_t *pid)
@@ -114,34 +117,55 @@ static void vm_run_pipeline(struct vm *vm, struct ast *ast)
 
 }
 
-static void vm_run_logical_expression(struct vm *vm, struct ast *ast, pid_t *pid)
+static int status_to_exit_code(int status)
+{
+    return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
+}
+
+static int vm_run_logical_expression(struct vm *vm, struct ast *ast, pid_t *pid)
 {
     struct ast *left = ast->data.logical_expression.left;
     struct ast *right = ast->data.logical_expression.right;
     enum ast_data_logical_expression_type type = ast->data.logical_expression.type;
+    int status = 0;
 
     if (!ast->async || (*pid = fork()) == 0) {
         int left_status = vm_run(vm, left);
+        status = left_status;
         switch (type) {
-        case AST_DATA_LOGICAL_EXPRESSION_TYPE_AND:
-            if (!left_status) {
-                vm_run(vm, right);
-            }
+            case AST_DATA_LOGICAL_EXPRESSION_TYPE_AND:
+                if (!left_status) {
+                    status = vm_run(vm, right);
+                }
 
-            return;
-        case AST_DATA_LOGICAL_EXPRESSION_TYPE_OR:
-            if (left_status) {
-                vm_run(vm, right);
-            }
+                break;
+            case AST_DATA_LOGICAL_EXPRESSION_TYPE_OR:
+                if (left_status) {
+                    status = vm_run(vm, right);
+                }
 
-            return;
+                break;
+        }
+
+        if (*pid == 0) {
+            exit(status_to_exit_code(status));
         }
     }
+
+    return status;
 }
 
 static void vm_run_subshell(struct vm *vm, struct ast *ast, pid_t *pid)
 {
+    *pid = fork();
+    if (*pid == -1) {
+        perror("fork");
+        exit(1);
+    }
 
+    if (*pid == 0) {
+        exit(status_to_exit_code(vm_run(vm, ast->data.subshell.script)));
+    }
 }
 
 int vm_run(struct vm *vm, struct ast *ast)
@@ -155,7 +179,7 @@ int vm_run(struct vm *vm, struct ast *ast)
 
     switch (ast->type) {
         case AST_TYPE_SCRIPT:
-            vm_run_script(vm, ast);
+            status = vm_run_script(vm, ast);
             break;
         case AST_TYPE_COMMAND:
             vm_run_command(vm, ast, &pid);
@@ -164,7 +188,7 @@ int vm_run(struct vm *vm, struct ast *ast)
             vm_run_pipeline(vm, ast);
             break;
         case AST_TYPE_LOGICAL_EXPRESSION:
-            vm_run_logical_expression(vm, ast, &pid);
+            status = vm_run_logical_expression(vm, ast, &pid);
             break;
         case AST_TYPE_SUBSHELL:
             vm_run_subshell(vm, ast, &pid);
@@ -182,10 +206,6 @@ int vm_run(struct vm *vm, struct ast *ast)
             print_process_exit_status(awaited_pid, status);
         }
         signal(SIGCHLD, sigchld_handler);
-    }
-
-    if (ast->async && pid == 0) {
-        exit(0);
     }
 
     return status;

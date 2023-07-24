@@ -255,9 +255,10 @@ static void parser_parse_expression(struct parser *p, struct ast **expression, c
 {
     struct token *logical_expression_token;
     enum ast_data_logical_expression_type type;
-    struct ast *expression_left;
-    struct ast *expression_right;
-    parser_parse_pipeline(p, expression, error_msg);
+    struct ast *tmp_expression;
+    struct ast *pipeline = NULL;
+    
+    parser_parse_pipeline(p, &pipeline, error_msg);
     if (*error_msg) {
         return;
     }
@@ -267,37 +268,44 @@ static void parser_parse_expression(struct parser *p, struct ast **expression, c
     if (!logical_expression_token) {
         parser_match_token(p, TOKEN_TYPE_OR, &logical_expression_token);
         if (!logical_expression_token) {
+            if (!*expression) {
+                *expression = pipeline;
+
+                return;
+            }
+            
+            if (!pipeline) {
+                *error_msg = "unexpected logical expression operand";
+
+                return;
+            }
+            
+            (*expression)->data.logical_expression.right = pipeline;
+            
             return;
         }
     }
 
-    expression_left = *expression;
+    if (!pipeline) {
+        *error_msg = "unexpected logical expression operand";
+
+        return;
+    }
 
     type = logical_expression_token->type == TOKEN_TYPE_AND ? 
         AST_DATA_LOGICAL_EXPRESSION_TYPE_AND : 
         AST_DATA_LOGICAL_EXPRESSION_TYPE_OR;
-    *expression = ast_create_logical_expression(type);
-    (*expression)->data.logical_expression.left = expression_left;
+    tmp_expression = ast_create_logical_expression(type);
     
-    if (!expression_left) {
-        *error_msg = "unexpected logical expression left operand";
-
-        return;
+    if (*expression) {
+        tmp_expression->data.logical_expression.left = *expression;
+        (*expression)->data.logical_expression.right = pipeline;
+    } else {
+        tmp_expression->data.logical_expression.left = pipeline;
     }
-
-    expression_right = NULL;
-    parser_parse_expression(p, &expression_right, error_msg);
-    (*expression)->data.logical_expression.right = expression_right;
-
-    if (*error_msg) {
-        return;
-    }
-
-    if (!expression_right) {
-        *error_msg = "unexpected logical expression right operand";
-
-        return;
-    }
+    
+    *expression = tmp_expression;
+    parser_parse_expression(p, expression, error_msg);
 }
 
 static void parser_parse_expression_separator(struct parser *p, struct ast **expression, char **error_msg)
