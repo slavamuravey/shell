@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 #include <sys/wait.h>
 #include <errno.h>
 #include "shell.h"
@@ -10,15 +11,28 @@
 #include "parser.h"
 #include "vm.h"
 
+static void sigchld_handler(int s)
+{   
+    pid_t pid;
+    int status;
+    signal(SIGCHLD, sigchld_handler);
+    while (true) {
+        pid = waitpid(-1, &status, WNOHANG);
+        if (pid <= 0) {
+            break;
+        }
+
+        /* print_process_exit_status(pid, status); */
+    }
+}
+
 struct shell *shell_create()
 {
     struct shell *s = malloc(sizeof(struct shell));
     struct tokenizer *t = tokenizer_create();
     struct parser *p = parser_create();
-    struct vm *vm = vm_create();
     s->t = t;
     s->p = p;
-    s->vm = vm;
 
     return s;
 }
@@ -44,6 +58,7 @@ static void shell_exec(struct shell *s, const char *str)
     struct parse_error *p_error = NULL;
     struct dynamic_array *tokens;
     struct ast *ast;
+    struct vm *vm;
 
     tokenizer_tokenize(s->t, str, &t_data, &t_error);
     if (t_error) {
@@ -76,7 +91,9 @@ static void shell_exec(struct shell *s, const char *str)
     free(p_data);
     free(p_error);
 
-    vm_run(s->vm, ast, NULL);
+    vm = vm_create(ast);
+    vm_run(vm);
+    vm_destroy(vm);
 
     tokens_destroy(tokens);
     ast_destroy(ast);
@@ -86,6 +103,7 @@ void shell_run(struct shell *s)
 {
     int c;
     struct dynamic_array *chars = dynamic_array_create(4, sizeof(char));
+    signal(SIGCHLD, sigchld_handler);
 
     shell_print_input_prompt(s);
     while (true) {
@@ -123,6 +141,5 @@ void shell_destroy(struct shell *s)
 {
     tokenizer_destroy(s->t);
     parser_destroy(s->p);
-    vm_destroy(s->vm);
     free(s);
 }
