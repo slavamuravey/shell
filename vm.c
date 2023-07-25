@@ -215,13 +215,16 @@ bool pid_in_array(struct dynamic_array *pids_array, pid_t pid)
 
 int vm_run(struct vm *vm, struct ast *ast)
 {
-    struct dynamic_array *waiting_pids_array = dynamic_array_create(4, sizeof(pid_t));
-    struct dynamic_array *waited_pids_array = dynamic_array_create(4, sizeof(pid_t));
+    struct dynamic_array *waiting_pids_array;
+    struct dynamic_array *waited_pids_array;
     int status = 0;
 
     if (!ast) {
         return status;
     }
+
+    waiting_pids_array = dynamic_array_create(4, sizeof(pid_t));
+    waited_pids_array = dynamic_array_create(4, sizeof(pid_t));
 
     switch (ast->type) {
         case AST_TYPE_SCRIPT:
@@ -256,6 +259,11 @@ int vm_run(struct vm *vm, struct ast *ast)
         }
         signal(SIGCHLD, sigchld_handler);
     }
+
+    free(waiting_pids_array->ptr);
+    free(waiting_pids_array);
+    free(waited_pids_array->ptr);
+    free(waited_pids_array);
 
     return status;
 }
