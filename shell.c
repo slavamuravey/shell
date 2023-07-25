@@ -76,7 +76,7 @@ static void shell_exec(struct shell *s, const char *str)
     free(p_data);
     free(p_error);
 
-    vm_run(s->vm, ast);
+    vm_run(s->vm, ast, NULL);
 
     tokens_destroy(tokens);
     ast_destroy(ast);

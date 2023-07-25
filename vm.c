@@ -53,13 +53,13 @@ static int vm_run_script(struct vm *vm, struct ast *ast)
     int status = 0;
 
     for (i = 0; i < expressions_array->len; i++) {
-        status = vm_run(vm, expressions[i]);
+        status = vm_run(vm, expressions[i], NULL);
     }
 
     return status;
 }
 
-static void vm_run_command(struct vm *vm, struct ast *ast, struct dynamic_array *pids_array)
+static void vm_run_command(struct vm *vm, struct ast *ast, struct dynamic_array *pids_array, struct data *data)
 {
     pid_t pid;
     char **cmd;
@@ -105,6 +105,19 @@ static void vm_run_command(struct vm *vm, struct ast *ast, struct dynamic_array 
     }
 
     if (pid == 0) {
+        if (data) {
+            if (data->left_pipe) {
+                dup2(data->left_pipe[0], STDIN_FILENO);
+                close(data->left_pipe[0]);
+                close(data->left_pipe[1]);
+            }
+            if (data->right_pipe) {
+                dup2(data->right_pipe[1], STDOUT_FILENO);
+                close(data->right_pipe[0]);
+                close(data->right_pipe[1]);
+            }
+        }
+
         execvp(*cmd, cmd);
         perror(*cmd);
         exit(1);
@@ -114,9 +127,29 @@ static void vm_run_command(struct vm *vm, struct ast *ast, struct dynamic_array 
     free(cmd);
 }
 
-static void vm_run_pipeline(struct vm *vm, struct ast *ast)
+static void vm_run_pipeline(struct vm *vm, struct ast *ast, struct dynamic_array *pids_array)
 {
+    int i;
+    int prev_pipe[2];
+    int cur_pipe[2];
+    struct dynamic_array *expressions_array = ast->data.pipeline.expressions;
+    struct ast **expressions = expressions_array->ptr;
+    for (i = 0; i < expressions_array->len; i++) {
+        struct data data;
+        if (i < expressions_array->len - 1) {
+            pipe(cur_pipe);
+        }
 
+        data.left_pipe = i == 0 ? NULL : prev_pipe;
+        data.right_pipe = i == expressions_array->len - 1 ? NULL : cur_pipe;
+        vm_run(vm, expressions[i], &data);
+        memcpy(prev_pipe, cur_pipe, 2 * sizeof(int));
+
+        if (i > 0) {
+            close(cur_pipe[0]);
+            close(cur_pipe[1]);
+        }
+    }
 }
 
 static int status_to_exit_code(int status)
@@ -131,18 +164,18 @@ static int vm_run_logical_expression_operands(
     enum ast_data_logical_expression_type type
 )
 {
-    int left_status = vm_run(vm, left);
+    int left_status = vm_run(vm, left, NULL);
     int status = left_status;
     switch (type) {
         case AST_DATA_LOGICAL_EXPRESSION_TYPE_AND:
             if (!left_status) {
-                status = vm_run(vm, right);
+                status = vm_run(vm, right, NULL);
             }
 
             break;
         case AST_DATA_LOGICAL_EXPRESSION_TYPE_OR:
             if (left_status) {
-                status = vm_run(vm, right);
+                status = vm_run(vm, right, NULL);
             }
 
             break;
@@ -185,7 +218,7 @@ static int vm_run_logical_expression(struct vm *vm, struct ast *ast)
     return status;
 }
 
-static void vm_run_subshell(struct vm *vm, struct ast *ast, struct dynamic_array *pids_array)
+static void vm_run_subshell(struct vm *vm, struct ast *ast, struct dynamic_array *pids_array, struct data *data)
 {
     pid_t pid = fork();
     if (pid == -1) {
@@ -194,7 +227,7 @@ static void vm_run_subshell(struct vm *vm, struct ast *ast, struct dynamic_array
     }
 
     if (pid == 0) {
-        exit(status_to_exit_code(vm_run(vm, ast->data.subshell.script)));
+        exit(status_to_exit_code(vm_run(vm, ast->data.subshell.script, NULL)));
     } else {
         dynamic_array_append(pids_array, &pid);
     }
@@ -213,7 +246,7 @@ bool pid_in_array(struct dynamic_array *pids_array, pid_t pid)
     return false;
 }
 
-int vm_run(struct vm *vm, struct ast *ast)
+int vm_run(struct vm *vm, struct ast *ast, const struct data *data)
 {
     struct dynamic_array *waiting_pids_array;
     struct dynamic_array *waited_pids_array;
@@ -231,19 +264,19 @@ int vm_run(struct vm *vm, struct ast *ast)
             status = vm_run_script(vm, ast);
             break;
         case AST_TYPE_COMMAND:
-            vm_run_command(vm, ast, waiting_pids_array);
+            vm_run_command(vm, ast, waiting_pids_array, data);
             break;
         case AST_TYPE_PIPELINE:
-            vm_run_pipeline(vm, ast);
+            vm_run_pipeline(vm, ast, waiting_pids_array);
             break;
         case AST_TYPE_LOGICAL_EXPRESSION:
             status = vm_run_logical_expression(vm, ast);
             break;
         case AST_TYPE_SUBSHELL:
-            vm_run_subshell(vm, ast, waiting_pids_array);
+            vm_run_subshell(vm, ast, waiting_pids_array, data);
             break;
     }
-
+printf("xxx: %ld\n", waiting_pids_array->len);
     if (!ast->async && waiting_pids_array->len) {
         pid_t waited_pid;
         signal(SIGCHLD, SIG_DFL);
