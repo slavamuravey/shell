@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <errno.h>
+#include <fcntl.h>
 #include "vm.h"
 #include "dynamic_array.h"
 #include "ast.h"
@@ -34,6 +35,66 @@ static void vm_run_script(struct vm *vm)
         vm_run(sub_vm);
         vm->status = sub_vm->status;
         vm_destroy(sub_vm);
+    }
+}
+
+static void vm_set_pipe_redirects(struct vm *vm)
+{
+    if (vm->left_pipe) {
+        dup2(vm->left_pipe[0], STDIN_FILENO);
+        close(vm->left_pipe[0]);
+        close(vm->left_pipe[1]);
+    }
+    if (vm->right_pipe) {
+        dup2(vm->right_pipe[1], STDOUT_FILENO);
+        close(vm->right_pipe[0]);
+        close(vm->right_pipe[1]);
+    }
+}
+
+static void vm_set_file_redirects(struct vm *vm, struct dynamic_array *redirects_array)
+{
+    int i;
+    struct ast_data_expression_redirect **redirects = redirects_array->ptr;
+    for (i = 0; i < redirects_array->len; i++) {
+        struct ast_data_expression_redirect *redirect = redirects[i];
+        char *filename = redirect->file;
+        int fd;
+        switch (redirect->type) {
+            case AST_DATA_EXPRESSION_REDIRECT_TYPE_INPUT:
+                fd = open(filename, O_RDONLY);
+                if (fd == -1) {
+                    perror(filename);
+                    exit(1);
+                }
+
+                dup2(fd, STDIN_FILENO);
+                close(fd);
+
+                break;
+            case AST_DATA_EXPRESSION_REDIRECT_TYPE_OUTPUT:
+                fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+                if (fd == -1) {
+                    perror(filename);
+                    exit(1);
+                }
+
+                dup2(fd, STDOUT_FILENO);
+                close(fd);
+
+                break;
+            case AST_DATA_EXPRESSION_REDIRECT_TYPE_OUTPUT_APPEND:
+                fd = open(filename, O_CREAT | O_WRONLY | O_APPEND, 0666);
+                if (fd == -1) {
+                    perror(filename);
+                    exit(1);
+                }
+
+                dup2(fd, STDOUT_FILENO);
+                close(fd);
+
+                break;
+        }
     }
 }
 
@@ -83,16 +144,8 @@ static void vm_run_command(struct vm *vm)
     }
 
     if (pid == 0) {
-        if (vm->left_pipe) {
-            dup2(vm->left_pipe[0], STDIN_FILENO);
-            close(vm->left_pipe[0]);
-            close(vm->left_pipe[1]);
-        }
-        if (vm->right_pipe) {
-            dup2(vm->right_pipe[1], STDOUT_FILENO);
-            close(vm->right_pipe[0]);
-            close(vm->right_pipe[1]);
-        }
+        vm_set_pipe_redirects(vm);
+        vm_set_file_redirects(vm, vm->ast->data.command.redirects);
 
         execvp(*cmd, cmd);
         perror(*cmd);
@@ -222,16 +275,8 @@ static void vm_run_subshell(struct vm *vm)
 
     if (pid == 0) {
         struct vm *sub_vm;
-        if (vm->left_pipe) {
-            dup2(vm->left_pipe[0], STDIN_FILENO);
-            close(vm->left_pipe[0]);
-            close(vm->left_pipe[1]);
-        }
-        if (vm->right_pipe) {
-            dup2(vm->right_pipe[1], STDOUT_FILENO);
-            close(vm->right_pipe[0]);
-            close(vm->right_pipe[1]);
-        }
+        vm_set_pipe_redirects(vm);
+        vm_set_file_redirects(vm, vm->ast->data.subshell.redirects);
 
         sub_vm = vm_create(vm->ast->data.subshell.script);
         vm_run(sub_vm);

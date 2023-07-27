@@ -152,8 +152,6 @@ static void parser_parse_command(struct parser *p, struct ast **command, char **
         word = dupstr(word_token->text);
         dynamic_array_append((*command)->data.command.words, &word);
     };
-
-    parser_parse_redirects(p, command, error_msg);
 }
 
 static void parser_parse_subshell(struct parser *p, struct ast **subshell, char **error_msg)
@@ -202,8 +200,6 @@ static void parser_parse_subshell(struct parser *p, struct ast **subshell, char 
             return;
         }
     }
-
-    parser_parse_redirects(p, subshell, error_msg);
 }
 
 static void parser_parse_pipeline(struct parser *p, struct ast **expression, char **error_msg)
@@ -219,6 +215,8 @@ static void parser_parse_pipeline(struct parser *p, struct ast **expression, cha
             
             return;
         }
+
+        parser_parse_redirects(p, &subshell, error_msg);
 
         pipe_token = NULL;
         parser_match_token(p, TOKEN_TYPE_PIPE, &pipe_token);
