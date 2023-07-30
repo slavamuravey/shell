@@ -10,6 +10,8 @@ struct vm {
     int *right_pipe;
     struct dynamic_array *waiting_pids_array;
     struct dynamic_array *waited_pids_array;
+    pid_t pgid;
+    bool bg;
 };
 
 struct vm *vm_create(const struct ast *ast);

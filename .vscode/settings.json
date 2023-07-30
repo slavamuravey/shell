@@ -31,6 +31,8 @@
         "strings.h": "c",
         "vm.h": "c",
         "cerrno": "c",
-        "signal.h": "c"
+        "signal.h": "c",
+        "struct_stat_time64_helper.h": "c",
+        "time64.h": "c"
     }
 }

@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 500
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -5,6 +6,8 @@
 #include <signal.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "vm.h"
 #include "dynamic_array.h"
 #include "ast.h"
@@ -19,6 +22,8 @@ struct vm *vm_create(const struct ast *ast)
     vm->status = 0;
     vm->left_pipe = NULL;
     vm->right_pipe = NULL;
+    vm->pgid = 0;
+    vm->bg = false;
 
     return vm;
 }
@@ -32,6 +37,8 @@ static void vm_run_script(struct vm *vm)
 
     for (i = 0; i < expressions_array->len; i++) {
         struct vm *sub_vm = vm_create(expressions[i]);
+        sub_vm->pgid = vm->pgid;
+        sub_vm->bg = vm->bg;
         vm_run(sub_vm);
         vm->status = sub_vm->status;
         vm_destroy(sub_vm);
@@ -151,6 +158,12 @@ static void vm_run_command(struct vm *vm)
         perror(*cmd);
         exit(1);
     }
+
+    if (setpgid(pid, vm->pgid) == -1) {
+        perror("setpgid");
+        exit(1);
+    }
+
     dynamic_array_append(vm->waiting_pids_array, &pid);
 
     free(cmd);
@@ -165,7 +178,7 @@ static void vm_run_pipeline(struct vm *vm)
     struct ast **expressions = expressions_array->ptr;
     for (i = 0; i < expressions_array->len; i++) {
         struct vm *sub_vm;
-        int j;
+        pid_t waiting_pid;
         pid_t *pids;
         if (i < expressions_array->len - 1) {
             pipe(cur_pipe);
@@ -174,11 +187,15 @@ static void vm_run_pipeline(struct vm *vm)
         sub_vm = vm_create(expressions[i]);
         sub_vm->left_pipe = i == 0 ? NULL : prev_pipe;
         sub_vm->right_pipe = i == expressions_array->len - 1 ? NULL : cur_pipe;
+        sub_vm->pgid = vm->pgid;
+        sub_vm->bg = vm->bg;
         vm_run(sub_vm);
         pids = sub_vm->waiting_pids_array->ptr;
-        for (j = 0; j < sub_vm->waiting_pids_array->len; j++) {
-            dynamic_array_append(vm->waiting_pids_array, pids + j);
+        waiting_pid = pids[0];
+        if (i == 0 && !vm->pgid) {
+            vm->pgid = waiting_pid;
         }
+        dynamic_array_append(vm->waiting_pids_array, &waiting_pid);
         vm_destroy(sub_vm);
 
         if (i > 0) {
@@ -205,6 +222,8 @@ static void vm_run_logical_expression_operands(
     int left_status;
     int status;
     struct vm *sub_vm = vm_create(left);
+    sub_vm->pgid = vm->pgid;
+    sub_vm->bg = vm->bg;
     vm_run(sub_vm);
     left_status = sub_vm->status;
     vm_destroy(sub_vm);
@@ -213,6 +232,8 @@ static void vm_run_logical_expression_operands(
         case AST_DATA_LOGICAL_EXPRESSION_TYPE_AND:
             if (!left_status) {
                 struct vm *sub_vm = vm_create(right);
+                sub_vm->pgid = vm->pgid;
+                sub_vm->bg = vm->bg;
                 vm_run(sub_vm);
                 status = sub_vm->status;
                 vm_destroy(sub_vm);
@@ -222,6 +243,8 @@ static void vm_run_logical_expression_operands(
         case AST_DATA_LOGICAL_EXPRESSION_TYPE_OR:
             if (left_status) {
                 struct vm *sub_vm = vm_create(right);
+                sub_vm->pgid = vm->pgid;
+                sub_vm->bg = vm->bg;
                 vm_run(sub_vm);
                 status = sub_vm->status;
                 vm_destroy(sub_vm);
@@ -279,11 +302,18 @@ static void vm_run_subshell(struct vm *vm)
         vm_set_file_redirects(vm, vm->ast->data.subshell.redirects);
 
         sub_vm = vm_create(vm->ast->data.subshell.script);
+        sub_vm->bg = vm->ast->async;
+        sub_vm->pgid = vm->pgid ? vm->pgid : getpid();
         vm_run(sub_vm);
         exit(status_to_exit_code(sub_vm->status));
-    } else {
-        dynamic_array_append(vm->waiting_pids_array, &pid);
     }
+
+    if (setpgid(pid, vm->pgid) == -1) {
+        perror("setpgid");
+        exit(1);
+    }
+
+    dynamic_array_append(vm->waiting_pids_array, &pid);
 }
 
 bool pid_in_array(struct dynamic_array *pids_array, pid_t pid)
@@ -328,7 +358,20 @@ void vm_run(struct vm *vm)
 
     if (!vm->ast->async && vm->waiting_pids_array->len) {
         pid_t waited_pid;
-        __sighandler_t prev_sig_handler = signal(SIGCHLD, SIG_DFL);
+        __sighandler_t prev_sigchld_handler;
+        __sighandler_t prev_sigttou_handler;
+
+        pid_t *waiting_pids = vm->waiting_pids_array->ptr;
+        pid_t waiting_pid = waiting_pids[0];
+        pid_t waiting_pgid = getpgid(waiting_pid);
+        pid_t shell_pgid;
+
+        if (!vm->bg && tcsetpgrp(STDOUT_FILENO, waiting_pgid) == -1) {
+            perror("tcsetpgrp");
+            exit(1);
+        }
+
+        prev_sigchld_handler = signal(SIGCHLD, SIG_DFL);
         while (true) {
             int status;
             waited_pid = wait(&status);
@@ -342,7 +385,14 @@ void vm_run(struct vm *vm)
                 break;
             }
         }
-        signal(SIGCHLD, prev_sig_handler);
+        signal(SIGCHLD, prev_sigchld_handler);
+        prev_sigttou_handler = signal(SIGTTOU, SIG_IGN);
+        shell_pgid = getpgid(0);
+        if (!vm->bg && tcsetpgrp(STDOUT_FILENO, shell_pgid) == -1) {
+            perror("tcsetpgrp");
+            exit(1);
+        }
+        signal(SIGTTOU, prev_sigttou_handler);
     }
 }
 
