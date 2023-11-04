@@ -1,5 +1,5 @@
-#ifndef AST_UTILS_SENTRY
-#define AST_UTILS_SENTRY
+#ifndef AST_UTILS_H_SENTRY
+#define AST_UTILS_H_SENTRY
 
 #include "ast.h"
 

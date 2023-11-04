@@ -1,5 +1,5 @@
-#ifndef AST_SENTRY
-#define AST_SENTRY
+#ifndef AST_H_SENTRY
+#define AST_H_SENTRY
 
 #include <stdbool.h>
 #include "dynamic_array.h"

@@ -1,5 +1,5 @@
-#ifndef TOKEN_SENTRY
-#define TOKEN_SENTRY
+#ifndef TOKEN_H_SENTRY
+#define TOKEN_H_SENTRY
 
 #include <stdbool.h>
 #include "dynamic_array.h"

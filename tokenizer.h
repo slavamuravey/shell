@@ -1,5 +1,5 @@
-#ifndef TOKENIZER_SENTRY
-#define TOKENIZER_SENTRY
+#ifndef TOKENIZER_H_SENTRY
+#define TOKENIZER_H_SENTRY
 
 #include <stdbool.h>
 #include "dynamic_array.h"

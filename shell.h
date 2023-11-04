@@ -1,5 +1,5 @@
-#ifndef SHELL_SENTRY
-#define SHELL_SENTRY
+#ifndef SHELL_H_SENTRY
+#define SHELL_H_SENTRY
 
 #include "tokenizer.h"
 #include "parser.h"

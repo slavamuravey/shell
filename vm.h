@@ -1,5 +1,5 @@
-#ifndef VM_SENTRY
-#define VM_SENTRY
+#ifndef VM_H_SENTRY
+#define VM_H_SENTRY
 
 #include "ast.h"
 

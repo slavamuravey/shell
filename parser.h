@@ -1,5 +1,5 @@
-#ifndef PARSER_SENTRY
-#define PARSER_SENTRY
+#ifndef PARSER_H_SENTRY
+#define PARSER_H_SENTRY
 
 #include "dynamic_array.h"
 #include "ast.h"
