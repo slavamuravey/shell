@@ -23,3 +23,7 @@ test: ast_test_run dynamic_array_test_run tokenizer_test_run
 .PHONY: clean
 clean:
 	rm -f *.o shell *_test
+
+.PHONY: check_memory_leaks
+check_memory_leaks: clean shell
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./shell
