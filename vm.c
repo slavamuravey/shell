@@ -68,39 +68,39 @@ static void vm_set_file_redirects(struct vm *vm, struct dynamic_array *redirects
         char *filename = redirect->file;
         int fd;
         switch (redirect->type) {
-            case AST_DATA_EXPRESSION_REDIRECT_TYPE_INPUT:
-                fd = open(filename, O_RDONLY);
-                if (fd == -1) {
-                    perror(filename);
-                    exit(1);
-                }
+        case AST_DATA_EXPRESSION_REDIRECT_TYPE_INPUT:
+            fd = open(filename, O_RDONLY);
+            if (fd == -1) {
+                perror(filename);
+                exit(1);
+            }
 
-                dup2(fd, STDIN_FILENO);
-                close(fd);
+            dup2(fd, STDIN_FILENO);
+            close(fd);
 
-                break;
-            case AST_DATA_EXPRESSION_REDIRECT_TYPE_OUTPUT:
-                fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
-                if (fd == -1) {
-                    perror(filename);
-                    exit(1);
-                }
+            break;
+        case AST_DATA_EXPRESSION_REDIRECT_TYPE_OUTPUT:
+            fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+            if (fd == -1) {
+                perror(filename);
+                exit(1);
+            }
 
-                dup2(fd, STDOUT_FILENO);
-                close(fd);
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
 
-                break;
-            case AST_DATA_EXPRESSION_REDIRECT_TYPE_OUTPUT_APPEND:
-                fd = open(filename, O_CREAT | O_WRONLY | O_APPEND, 0666);
-                if (fd == -1) {
-                    perror(filename);
-                    exit(1);
-                }
+            break;
+        case AST_DATA_EXPRESSION_REDIRECT_TYPE_OUTPUT_APPEND:
+            fd = open(filename, O_CREAT | O_WRONLY | O_APPEND, 0666);
+            if (fd == -1) {
+                perror(filename);
+                exit(1);
+            }
 
-                dup2(fd, STDOUT_FILENO);
-                close(fd);
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
 
-                break;
+            break;
         }
     }
 }
@@ -229,28 +229,28 @@ static void vm_run_logical_expression_operands(
     vm_destroy(sub_vm);
     status = left_status;
     switch (type) {
-        case AST_DATA_LOGICAL_EXPRESSION_TYPE_AND:
-            if (!left_status) {
-                struct vm *sub_vm = vm_create(right);
-                sub_vm->pgid = vm->pgid;
-                sub_vm->bg = vm->bg;
-                vm_run(sub_vm);
-                status = sub_vm->status;
-                vm_destroy(sub_vm);
-            }
+    case AST_DATA_LOGICAL_EXPRESSION_TYPE_AND:
+        if (!left_status) {
+            struct vm *sub_vm = vm_create(right);
+            sub_vm->pgid = vm->pgid;
+            sub_vm->bg = vm->bg;
+            vm_run(sub_vm);
+            status = sub_vm->status;
+            vm_destroy(sub_vm);
+        }
 
-            break;
-        case AST_DATA_LOGICAL_EXPRESSION_TYPE_OR:
-            if (left_status) {
-                struct vm *sub_vm = vm_create(right);
-                sub_vm->pgid = vm->pgid;
-                sub_vm->bg = vm->bg;
-                vm_run(sub_vm);
-                status = sub_vm->status;
-                vm_destroy(sub_vm);
-            }
+        break;
+    case AST_DATA_LOGICAL_EXPRESSION_TYPE_OR:
+        if (left_status) {
+            struct vm *sub_vm = vm_create(right);
+            sub_vm->pgid = vm->pgid;
+            sub_vm->bg = vm->bg;
+            vm_run(sub_vm);
+            status = sub_vm->status;
+            vm_destroy(sub_vm);
+        }
 
-            break;
+        break;
     }
 
     vm->status = status;
@@ -339,21 +339,21 @@ void vm_run(struct vm *vm)
     }
 
     switch (vm->ast->type) {
-        case AST_TYPE_SCRIPT:
-            vm_run_script(vm);
-            break;
-        case AST_TYPE_COMMAND:
-            vm_run_command(vm);
-            break;
-        case AST_TYPE_PIPELINE:
-            vm_run_pipeline(vm);
-            break;
-        case AST_TYPE_LOGICAL_EXPRESSION:
-            vm_run_logical_expression(vm);
-            break;
-        case AST_TYPE_SUBSHELL:
-            vm_run_subshell(vm);
-            break;
+    case AST_TYPE_SCRIPT:
+        vm_run_script(vm);
+        break;
+    case AST_TYPE_COMMAND:
+        vm_run_command(vm);
+        break;
+    case AST_TYPE_PIPELINE:
+        vm_run_pipeline(vm);
+        break;
+    case AST_TYPE_LOGICAL_EXPRESSION:
+        vm_run_logical_expression(vm);
+        break;
+    case AST_TYPE_SUBSHELL:
+        vm_run_subshell(vm);
+        break;
     }
 
     if (!vm->ast->async && vm->waiting_pids_array->len) {

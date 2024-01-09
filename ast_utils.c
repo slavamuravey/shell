@@ -141,21 +141,21 @@ void print_ast(struct ast *ast)
     printf(",");
 
     switch (ast->type) {
-        case AST_TYPE_SCRIPT:
-            print_ast_script(ast);
-            break;
-        case AST_TYPE_COMMAND:
-            print_ast_command(ast);
-            break;
-        case AST_TYPE_PIPELINE:
-            print_ast_pipeline(ast);
-            break;
-        case AST_TYPE_LOGICAL_EXPRESSION:
-            print_ast_logical_expression(ast);
-            break;
-        case AST_TYPE_SUBSHELL:
-            print_ast_subshell(ast);
-            break;
+    case AST_TYPE_SCRIPT:
+        print_ast_script(ast);
+        break;
+    case AST_TYPE_COMMAND:
+        print_ast_command(ast);
+        break;
+    case AST_TYPE_PIPELINE:
+        print_ast_pipeline(ast);
+        break;
+    case AST_TYPE_LOGICAL_EXPRESSION:
+        print_ast_logical_expression(ast);
+        break;
+    case AST_TYPE_SUBSHELL:
+        print_ast_subshell(ast);
+        break;
     }
 
     printf("\"async\": %d", ast->async);

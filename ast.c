@@ -150,21 +150,21 @@ void ast_destroy(struct ast *ast)
     }
 
     switch (ast->type) {
-        case AST_TYPE_SCRIPT:
-            ast_destroy_script(ast);
-            break;
-        case AST_TYPE_COMMAND:
-            ast_destroy_command(ast);
-            break;
-        case AST_TYPE_PIPELINE:
-            ast_destroy_pipeline(ast);
-            break;
-        case AST_TYPE_LOGICAL_EXPRESSION:
-            ast_destroy_logical_expression(ast);
-            break;
-        case AST_TYPE_SUBSHELL:
-            ast_destroy_subshell(ast);
-            break;
+    case AST_TYPE_SCRIPT:
+        ast_destroy_script(ast);
+        break;
+    case AST_TYPE_COMMAND:
+        ast_destroy_command(ast);
+        break;
+    case AST_TYPE_PIPELINE:
+        ast_destroy_pipeline(ast);
+        break;
+    case AST_TYPE_LOGICAL_EXPRESSION:
+        ast_destroy_logical_expression(ast);
+        break;
+    case AST_TYPE_SUBSHELL:
+        ast_destroy_subshell(ast);
+        break;
     }
 
     free(ast);

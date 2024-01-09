@@ -60,14 +60,14 @@ static void parser_match_token(struct parser *p, enum token_type token_type, str
 static void parser_append_expression_redirect(struct parser *p, struct ast **expression, struct ast_data_expression_redirect *redirect)
 {
     switch ((*expression)->type) {
-        case AST_TYPE_COMMAND: 
-            dynamic_array_append((*expression)->data.command.redirects, &redirect);
-            break;
-        case AST_TYPE_SUBSHELL: 
-            dynamic_array_append((*expression)->data.subshell.redirects, &redirect);
-            break;
-        default:
-            break;
+    case AST_TYPE_COMMAND: 
+        dynamic_array_append((*expression)->data.command.redirects, &redirect);
+        break;
+    case AST_TYPE_SUBSHELL: 
+        dynamic_array_append((*expression)->data.subshell.redirects, &redirect);
+        break;
+    default:
+        break;
     }
 }
 
