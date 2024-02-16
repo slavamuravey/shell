@@ -366,9 +366,11 @@ void vm_run(struct vm *vm)
         pid_t waiting_pgid = getpgid(waiting_pid);
         pid_t shell_pgid;
 
-        if (!vm->bg && tcsetpgrp(STDOUT_FILENO, waiting_pgid) == -1) {
-            perror("tcsetpgrp");
-            exit(1);
+        if (!vm->bg) {
+            if (tcsetpgrp(STDOUT_FILENO, waiting_pgid) == -1) {
+                perror("tcsetpgrp");
+                exit(1);
+            }
         }
 
         prev_sigchld_handler = signal(SIGCHLD, SIG_DFL);
@@ -388,9 +390,11 @@ void vm_run(struct vm *vm)
         signal(SIGCHLD, prev_sigchld_handler);
         prev_sigttou_handler = signal(SIGTTOU, SIG_IGN);
         shell_pgid = getpgid(0);
-        if (!vm->bg && tcsetpgrp(STDOUT_FILENO, shell_pgid) == -1) {
-            perror("tcsetpgrp");
-            exit(1);
+        if (!vm->bg) {
+            if (tcsetpgrp(STDOUT_FILENO, shell_pgid) == -1) {
+                perror("tcsetpgrp");
+                exit(1);
+            }
         }
         signal(SIGTTOU, prev_sigttou_handler);
     }
